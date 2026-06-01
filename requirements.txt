@@ -1,0 +1,3 @@
+espn-api
+pandas
+python-dotenv
