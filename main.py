@@ -55,10 +55,13 @@ for pick in league.draft:
 
 draft_df = pd.DataFrame(draft_rows)
 
+
+
+
+
 players_df.to_csv(OUTPUT_DIR / "players.csv", index=False)
 draft_df.to_csv(OUTPUT_DIR / "draft.csv", index=False)
 draft_analysis_df = draft_analysis.draft_analysis(players_df, draft_df)
 
-print(draft_analysis_df)
-
+# print(draft_analysis_df)
 
