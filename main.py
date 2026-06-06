@@ -5,6 +5,8 @@ from espn_api.basketball import League
 import pandas as pd
 from dotenv import load_dotenv
 import features.draft_analysis as draft_analysis
+import features.build_players_weekly as build_players_weekly
+import features.build_matchups as build_matchups
 MIN_GAMES_PLAYED = 41
 OUTPUT_DIR = Path("reports")
 
@@ -62,6 +64,5 @@ draft_df = pd.DataFrame(draft_rows)
 players_df.to_csv(OUTPUT_DIR / "players.csv", index=False)
 draft_df.to_csv(OUTPUT_DIR / "draft.csv", index=False)
 draft_analysis_df = draft_analysis.draft_analysis(players_df, draft_df)
-
-# print(draft_analysis_df)
-
+build_matchups_df = build_matchups.build_matchups(league, start_week=1, end_week=22)
+print(build_matchups_df)
