@@ -30,6 +30,7 @@ previous_league = League(
 )
 
 OUTPUT_DIR.mkdir(exist_ok=True)
+RESULTS_DIR.mkdir(exist_ok=True)
 
 
 player_rows = []
@@ -70,7 +71,12 @@ draft_df = pd.DataFrame(draft_rows)
 
 players_df.to_csv(OUTPUT_DIR / "players.csv", index=False)
 draft_df.to_csv(OUTPUT_DIR / "draft.csv", index=False)
-draft_analysis_df = draft_analysis.draft_analysis(players_df, draft_df)
+draft_analysis_df = draft_analysis.draft_analysis(
+    players_df,
+    draft_df,
+    league=league,
+    output_dir=RESULTS_DIR,
+)
 breakout_players_df = build_breakout_players.build_breakout_players(
     league,
     previous_league,
