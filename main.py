@@ -9,8 +9,8 @@ import features.build_players_weekly as build_players_weekly
 import features.build_matchups as build_matchups
 import features.build_breakout_players as build_breakout_players
 MIN_GAMES_PLAYED = 41
-OUTPUT_DIR = Path("reports")
-
+OUTPUT_DIR = Path("data")
+RESULTS_DIR = Path("reports")
 load_dotenv()
 
 current_year = int(os.environ["ESPN_YEAR"])
@@ -76,6 +76,6 @@ breakout_players_df = build_breakout_players.build_breakout_players(
     previous_league,
     min_current_gp=MIN_GAMES_PLAYED,
 )
-breakout_players_df.to_csv(OUTPUT_DIR / "breakout_players.csv", index=False)
+breakout_players_df.to_csv(RESULTS_DIR / "breakout_players.csv", index=False)
 build_matchups_df = build_matchups.build_matchups(league, start_week=1, end_week=22)
 print(build_matchups_df)
