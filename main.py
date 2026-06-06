@@ -7,19 +7,30 @@ from dotenv import load_dotenv
 import features.draft_analysis as draft_analysis
 import features.build_players_weekly as build_players_weekly
 import features.build_matchups as build_matchups
+import features.build_breakout_players as build_breakout_players
 MIN_GAMES_PLAYED = 41
-OUTPUT_DIR = Path("reports")
-
+OUTPUT_DIR = Path("data")
+RESULTS_DIR = Path("reports")
 load_dotenv()
+
+current_year = int(os.environ["ESPN_YEAR"])
 
 league = League(
     league_id=int(os.environ["ESPN_LEAGUE_ID"]),
-    year=int(os.environ["ESPN_YEAR"]),
+    year=current_year,
+    espn_s2=os.environ["ESPN_S2"],
+    swid=os.environ["ESPN_SWID"],
+)
+
+previous_league = League(
+    league_id=int(os.environ["ESPN_LEAGUE_ID"]),
+    year=current_year - 1,
     espn_s2=os.environ["ESPN_S2"],
     swid=os.environ["ESPN_SWID"],
 )
 
 OUTPUT_DIR.mkdir(exist_ok=True)
+RESULTS_DIR.mkdir(exist_ok=True)
 
 
 player_rows = []
@@ -58,11 +69,19 @@ for pick in league.draft:
 draft_df = pd.DataFrame(draft_rows)
 
 
-
-
-
 players_df.to_csv(OUTPUT_DIR / "players.csv", index=False)
 draft_df.to_csv(OUTPUT_DIR / "draft.csv", index=False)
-draft_analysis_df = draft_analysis.draft_analysis(players_df, draft_df)
+draft_analysis_df = draft_analysis.draft_analysis(
+    players_df,
+    draft_df,
+    league=league,
+    output_dir=RESULTS_DIR,
+)
+breakout_players_df = build_breakout_players.build_breakout_players(
+    league,
+    previous_league,
+    min_current_gp=MIN_GAMES_PLAYED,
+)
+breakout_players_df.to_csv(RESULTS_DIR / "breakout_players.csv", index=False)
 build_matchups_df = build_matchups.build_matchups(league, start_week=1, end_week=22)
 print(build_matchups_df)
