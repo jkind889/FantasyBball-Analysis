@@ -69,14 +69,55 @@ def draft_analysis(players_df, draft_df, league=None, output_dir=None):
         .astype("Int64")
     )
 
-    draft_analysis_df["draft_value_score"] = pd.Series(
-        pd.NA,
-        index=draft_analysis_df.index,
-        dtype="Int64",
+    draft_analysis_df["expected_avg_points"] = pd.NA
+    eligible_rounds = draft_analysis_df.loc[is_eligible].groupby("round_num")[
+        "avg_points"
+    ]
+    round_avg_points = eligible_rounds.transform("mean")
+    round_total_points = eligible_rounds.transform("sum")
+    round_player_counts = eligible_rounds.transform("count")
+    expected_avg_points = round_avg_points.where(
+        round_player_counts <= 1,
+        (round_total_points - draft_analysis_df.loc[is_eligible, "avg_points"])
+        / (round_player_counts - 1),
     )
-    draft_analysis_df.loc[is_eligible, "draft_value_score"] = (
-        draft_analysis_df.loc[is_eligible, "overall_pick"]
-        - draft_analysis_df.loc[is_eligible, "actual_pg_rank"]
+    draft_analysis_df.loc[is_eligible, "expected_avg_points"] = expected_avg_points
+
+    draft_analysis_df["vope_score"] = pd.NA
+    draft_analysis_df.loc[is_eligible, "vope_score"] = (
+        draft_analysis_df.loc[is_eligible, "avg_points"]
+        - draft_analysis_df.loc[is_eligible, "expected_avg_points"]
+    )
+
+    draft_analysis_df["roi"] = pd.NA
+    has_expected_points = (
+        is_eligible
+        & draft_analysis_df["expected_avg_points"].notna()
+        & (draft_analysis_df["expected_avg_points"] > 0)
+    )
+    draft_analysis_df.loc[has_expected_points, "roi"] = (
+        draft_analysis_df.loc[has_expected_points, "vope_score"]
+        / draft_analysis_df.loc[has_expected_points, "expected_avg_points"]
+    )
+
+    max_overall_pick = draft_analysis_df["overall_pick"].max()
+    if max_overall_pick > 1:
+        draft_pick_weight = 1 + (
+            (max_overall_pick - draft_analysis_df["overall_pick"])
+            / (max_overall_pick - 1)
+        )
+    else:
+        draft_pick_weight = pd.Series(2.0, index=draft_analysis_df.index)
+
+    draft_analysis_df["draft_pick_weight"] = pd.NA
+    draft_analysis_df.loc[is_eligible, "draft_pick_weight"] = draft_pick_weight.loc[
+        is_eligible
+    ]
+
+    draft_analysis_df["weighted_vope_score"] = pd.NA
+    draft_analysis_df.loc[is_eligible, "weighted_vope_score"] = (
+        draft_analysis_df.loc[is_eligible, "vope_score"]
+        * draft_analysis_df.loc[is_eligible, "draft_pick_weight"]
     )
 
     def get_value_status(row):
@@ -84,11 +125,11 @@ def draft_analysis(players_df, draft_df, league=None, output_dir=None):
             return "Missing Stats"
         if row["games_played"] < MIN_GAMES_PLAYED:
             return "Insufficient GP"
-        if row["draft_value_score"] >= 30:
+        if row["weighted_vope_score"] >= 5:
             return "Steal"
-        if row["draft_value_score"] >= 10:
+        if row["weighted_vope_score"] >= 2:
             return "Good Value"
-        if row["draft_value_score"] > -10:
+        if row["weighted_vope_score"] > -2:
             return "Fair"
         return "Reach"
 
@@ -101,20 +142,27 @@ def draft_analysis(players_df, draft_df, league=None, output_dir=None):
         "avg_points",
         "games_played",
         "actual_pg_rank",
-        "draft_value_score",
+        "expected_avg_points",
+        "vope_score",
+        "roi",
+        "draft_pick_weight",
+        "weighted_vope_score",
         "value_status",
     ]
 
-    draft_analysis_df["_has_value_score"] = draft_analysis_df["draft_value_score"].notna()
+    draft_analysis_df["_has_value_score"] = draft_analysis_df[
+        "weighted_vope_score"
+    ].notna()
     sorted_draft_analysis_df = draft_analysis_df.sort_values(
         by=[
             "_has_value_score",
-            "draft_value_score",
+            "weighted_vope_score",
+            "roi",
             "avg_points",
             "games_played",
             "overall_pick",
         ],
-        ascending=[False, False, False, False, False],
+        ascending=[False, False, False, False, False, False],
     ).drop(columns="_has_value_score")
 
     sorted_draft_analysis_df = sorted_draft_analysis_df[output_columns].reset_index(

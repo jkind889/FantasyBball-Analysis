@@ -13,14 +13,16 @@ OUTPUT_DIR = Path("data")
 RESULTS_DIR = Path("reports")
 load_dotenv()
 
+
 current_year = int(os.environ["ESPN_YEAR"])
 
-league = League(
+current_league = League(
     league_id=int(os.environ["ESPN_LEAGUE_ID"]),
     year=current_year,
     espn_s2=os.environ["ESPN_S2"],
     swid=os.environ["ESPN_SWID"],
 )
+
 
 previous_league = League(
     league_id=int(os.environ["ESPN_LEAGUE_ID"]),
@@ -34,7 +36,7 @@ RESULTS_DIR.mkdir(exist_ok=True)
 
 
 player_rows = []
-for team in league.teams:
+for team in current_league.teams:
     for player in team.roster:
         season_key = f"{player.year}_total"
         season_stats = player.stats.get(season_key, {})
@@ -57,7 +59,7 @@ players_df = pd.DataFrame(player_rows)
 
 draft_rows = []
 
-for pick in league.draft:
+for pick in current_league.draft:
     draft_rows.append({
         "player_id": pick.playerId,
         "player_name": pick.playerName,
@@ -74,14 +76,14 @@ draft_df.to_csv(OUTPUT_DIR / "draft.csv", index=False)
 draft_analysis_df = draft_analysis.draft_analysis(
     players_df,
     draft_df,
-    league=league,
+    league=current_league,
     output_dir=RESULTS_DIR,
 )
 breakout_players_df = build_breakout_players.build_breakout_players(
-    league,
+    current_league,
     previous_league,
     min_current_gp=MIN_GAMES_PLAYED,
 )
 breakout_players_df.to_csv(RESULTS_DIR / "breakout_players.csv", index=False)
-build_matchups_df = build_matchups.build_matchups(league, start_week=1, end_week=22)
+build_matchups_df = build_matchups.build_matchups(current_league, start_week=1, end_week=22)
 print(build_matchups_df)
