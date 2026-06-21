@@ -6,6 +6,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import features.draft_analysis as draft_analysis
 import features.projection_analysis as projection_analysis
+import features.roster_points_comparison as roster_points_comparison
 import features.build_players_weekly as build_players_weekly
 import features.build_matchups as build_matchups
 import features.build_breakout_players as build_breakout_players
@@ -84,6 +85,11 @@ projection_analysis_df = projection_analysis.projection_analysis(
     players_df,
     draft_df,
     league=current_league,
+    output_dir=RESULTS_DIR,
+)
+roster_points_comparison_df = roster_points_comparison.roster_points_comparison(
+    players_df,
+    draft_analysis_df,
     output_dir=RESULTS_DIR,
 )
 breakout_players_df = build_breakout_players.build_breakout_players(
