@@ -5,6 +5,7 @@ from espn_api.basketball import League
 import pandas as pd
 from dotenv import load_dotenv
 import features.draft_analysis as draft_analysis
+import features.projection_analysis as projection_analysis
 import features.build_players_weekly as build_players_weekly
 import features.build_matchups as build_matchups
 import features.build_breakout_players as build_breakout_players
@@ -79,6 +80,12 @@ draft_analysis_df = draft_analysis.draft_analysis(
     league=current_league,
     output_dir=RESULTS_DIR,
 )
+projection_analysis_df = projection_analysis.projection_analysis(
+    players_df,
+    draft_df,
+    league=current_league,
+    output_dir=RESULTS_DIR,
+)
 breakout_players_df = build_breakout_players.build_breakout_players(
     current_league,
     previous_league,
@@ -86,4 +93,3 @@ breakout_players_df = build_breakout_players.build_breakout_players(
 )
 breakout_players_df.to_csv(RESULTS_DIR / "breakout_players.csv", index=False)
 build_matchups_df = build_matchups.build_matchups(current_league, start_week=1, end_week=22)
-
