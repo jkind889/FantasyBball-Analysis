@@ -10,11 +10,15 @@ import features.roster_points_comparison as roster_points_comparison
 import features.build_players_weekly as build_players_weekly
 import features.build_matchups as build_matchups
 import features.build_breakout_players as build_breakout_players
+from database import get_connection
+
+
 MIN_GAMES_PLAYED = 41
 OUTPUT_DIR = Path("data")
 RESULTS_DIR = Path("reports")
 load_dotenv()
-
+conn = get_connection()
+cursor = conn.cursor()
 
 current_year = int(os.environ["ESPN_YEAR"])
 
@@ -35,6 +39,56 @@ previous_league = League(
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 RESULTS_DIR.mkdir(exist_ok=True)
+
+
+for team in current_league.teams:
+    team_id = team.team_id
+    team_name = team.team_name
+    owner = team.owners[0]
+    owner_name = f"{owner["firstName"]}" + " " + f"{owner["lastName"]}"
+    season_year = current_year
+
+    cursor.execute(
+        """
+        INSERT INTO teams (team_id,team_name,owner_name,season_year)
+        VALUES (%s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE team_id = VALUES(team_id), team_name = VALUES(team_name), season_year = VALUES(season_year)
+        """,
+        (team_id,team_name,owner_name,season_year)
+    )
+conn.commit()
+
+# for team in current_league.teams:
+#     for player in team.roster:
+#         player_name = player.name
+#         season_year = current_year
+#         team_id = team.team_id
+#         pro_team = player.proTeam
+#         player_id = player.playerId
+#         cursor.execute(
+#             """
+#             INSERT into final_rosters (season_year,team_id,player_name,pro_team,player_id)
+#             VALUES (%s,%s,%s,%s,%s)
+#             """,
+#             (season_year,team_id,player_name,pro_team,player_id)
+#         )
+# conn.commit()
+
+def insert_players_from_finalrosters(current_league):
+    for team in current_league.teams:
+        for player in team.roster:
+            player_name = player.name
+            player_id = player.playerId
+            position = player.position
+            cursor.execute(
+                """
+                INSERT INTO final_rosters (player_name,player_id,position)
+                VALUES (%s,%s,%s)
+                ON DUPLICATE KEY UPDATE player_name = VALUES(player_name), player_id = VALUES(player_id), position = VALUES(position)
+                """,
+                (player_name,player_id,position)
+            )
+    conn.commit()
 
 
 player_rows = []
