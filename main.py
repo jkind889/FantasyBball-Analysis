@@ -58,35 +58,102 @@ for team in current_league.teams:
     )
 conn.commit()
 
-# for team in current_league.teams:
-#     for player in team.roster:
-#         player_name = player.name
-#         season_year = current_year
-#         team_id = team.team_id
-#         pro_team = player.proTeam
-#         player_id = player.playerId
-#         cursor.execute(
-#             """
-#             INSERT into final_rosters (season_year,team_id,player_name,pro_team,player_id)
-#             VALUES (%s,%s,%s,%s,%s)
-#             """,
-#             (season_year,team_id,player_name,pro_team,player_id)
-#         )
-# conn.commit()
+def insert_player(cursor,player_id,player_name, position=None, pro_team=None):
+    cursor.execute(
+        """
+        INSERT INTO players(player_id,player_name,position, pro_team)
+        VALUES (%s,%s,%s,%s)
+        ON DUPLICATE KEY UPDATE
+            player_name = VALUES(player_name),
+            position = COALESCE(VALUES(position), position),
+            pro_team = COALESCE(VALUES(pro_team), pro_team)
+        """,
+        (player_id,player_name,position,pro_team),
+    )
+
+def insert_players_from_draft(current_league):
+    for pick in current_league.draft:
+        insert_player(cursor,pick.playerId,pick.playerName)
+        
+        round_pick = pick.round_pick
+        team_id = pick.team.team_id
+        round_num = pick.round_num
+        round_pick = pick.round_pick
+        season_year = current_year
+        overall_pick = ((pick.round_num - 1) * len(current_league.teams)) + pick.round_pick
+        cursor.execute(
+            """
+            INSERT INTO draft_picks(season_year,overall_pick,round_num,team_id,player_id,round_pick)
+            VALUES (%s,%s,%s,%s,%s,%s)
+            ON DUPLICATE KEY UPDATE
+            round_num = VALUES(round_num),
+            round_pick = VALUES(round_pick),
+            team_id = VALUES(team_id),
+            player_id = VALUES(player_id)
+            """,
+            (season_year,overall_pick,round_num,team_id,pick.playerId,round_pick)
+        )
+    conn.commit()
 
 def insert_players_from_finalrosters(current_league):
     for team in current_league.teams:
         for player in team.roster:
-            player_name = player.name
+            insert_player(cursor,player.playerId,player.name,player.position,player.proTeam)
+    conn.commit()
+
+def insert_playerseasons(cursor,season_year,player_id,avg_points,total_points,games_played):
+    cursor.execute(
+        """
+        INSERT INTO player_season(season_year,player_id,avg_points,total_points,games_played)
+        VALUES (%s,%s,%s,%s,%s)
+        ON DUPLICATE KEY UPDATE
+        avg_points = VALUES(avg_points),
+        total_points = VALUES(total_points),
+        games_played = VALUES(games_played)
+        """,
+        (season_year,player_id,avg_points,total_points,games_played)
+    )
+
+
+
+def insert_playerseason_players(current_league,previous_league):
+    for team in previous_league.teams:
+        for player in team.roster:
+            insert_player(cursor,player.playerId,player.name,player.position,player.proTeam)
+            season_key = f"{player.year}_total"
+            season_stats = player.stats.get(season_key, {})
+            total_stats = season_stats.get('total', {})
+            insert_playerseasons(cursor,previous_league.year,player.playerId,player.avg_points,player.total_points,total_stats.get("GP",0))
+    
+    for team in current_league.teams:
+        for player in team.roster:
+            insert_player(cursor,player.playerId,player.name,player.position,player.proTeam)
+            season_key = f"{player.year}_total"
+            season_stats = player.stats.get(season_key, {})
+            total_stats = season_stats.get('total', {})
+            insert_playerseasons(cursor,current_league.year,player.playerId,player.avg_points,player.total_points,total_stats.get("GP",0))
+    conn.commit()
+
+def insert_finalrosters(current_league):
+    for team in current_league.teams:
+        for player in team.roster:
+            season_year = current_league.year
+            team_id = team.team_id
             player_id = player.playerId
-            position = player.position
+            pro_team = player.proTeam
+            player_name = player.name
+
+            insert_player(cursor,player_id,player_name,player.position,pro_team)
             cursor.execute(
                 """
-                INSERT INTO final_rosters (player_name,player_id,position)
-                VALUES (%s,%s,%s)
-                ON DUPLICATE KEY UPDATE player_name = VALUES(player_name), player_id = VALUES(player_id), position = VALUES(position)
+                INSERT INTO final_rosters (season_year,team_id,player_id,pro_team,player_name)
+                VALUES (%s,%s,%s,%s,%s)
+                ON DUPLICATE KEY UPDATE
+                team_id = VALUES(team_id),
+                pro_team = VALUES(pro_team),
+                player_name = VALUES(player_name)
                 """,
-                (player_name,player_id,position)
+                (season_year,team_id,player_id,pro_team,player_name)
             )
     conn.commit()
 
@@ -153,3 +220,8 @@ breakout_players_df = build_breakout_players.build_breakout_players(
 )
 breakout_players_df.to_csv(RESULTS_DIR / "breakout_players.csv", index=False)
 build_matchups_df = build_matchups.build_matchups(current_league, start_week=1, end_week=22)
+
+insert_players_from_draft(current_league)
+insert_players_from_finalrosters(current_league)
+insert_playerseason_players(current_league,previous_league)
+insert_finalrosters(current_league)
