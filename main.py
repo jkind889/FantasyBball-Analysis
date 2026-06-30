@@ -157,41 +157,57 @@ def insert_finalrosters(current_league):
             )
     conn.commit()
 
+players_df = pd.read_sql(
+    """
+    SELECT
+        p.player_id,
+        COALESCE(fr.player_name,p.player_name) AS player_name,
+        t.team_name,
+        p.position,
+        COALESCE(fr.pro_team,p.pro_team) AS pro_team,
+        NULL AS pos_rank,
+        ps.total_points,
+        ps.avg_points,
+        0 AS projected_total_points,
+        0 AS projected_avg_points,
+        ps.games_played
+    FROM final_rosters fr
+    JOIN players p
+        ON p.player_id = fr.player_id
+    JOIN teams t
+        ON t.team_id = fr.team_id
+        AND t.season_year = fr.season_year
+    LEFT JOIN player_season ps
+        ON ps.player_id = fr.player_id
+        AND ps.season_year = fr.season_year
+    WHERE fr.season_year = %s
+    ORDER BY t.team_name, player_name
+    """, 
+    conn,
+    params=(current_year,),
+)
 
-player_rows = []
-for team in current_league.teams:
-    for player in team.roster:
-        season_key = f"{player.year}_total"
-        season_stats = player.stats.get(season_key, {})
-        total_stats = season_stats.get('total', {})
+draft_df = pd.read_sql(
+    """
+    SELECT
+        dp.player_id,
+        p.player_name,
+        dp.round_num,
+        dp.round_pick,
+        t.team_name AS fantasy_team
+    FROM draft_picks dp
+    JOIN players p
+        ON p.player_id = dp.player_id
+    JOIN teams t
+        ON t.team_id = dp.team_id
+        AND t.season_year = dp.season_year
+    WHERE dp.season_year = %s
+    ORDER BY dp.overall_pick
+    """,
+    conn,
+    params = (current_year,),
+)
 
-        player_rows.append({
-            "player_id": player.playerId,
-            "player_name": player.name,
-            "team_name": team.team_name,
-            "position": player.position,
-            "pro_team": player.proTeam,
-            "pos_rank": player.posRank,
-            "total_points": player.total_points,
-            "avg_points": player.avg_points,
-            "projected_total_points": player.projected_total_points,
-            "projected_avg_points": player.projected_avg_points,
-            "games_played": total_stats.get("GP", 0),})
-
-players_df = pd.DataFrame(player_rows)
-
-draft_rows = []
-
-for pick in current_league.draft:
-    draft_rows.append({
-        "player_id": pick.playerId,
-        "player_name": pick.playerName,
-        "round_num": pick.round_num,
-        "round_pick": pick.round_pick,
-        "fantasy_team": pick.team.team_name
-    })
-
-draft_df = pd.DataFrame(draft_rows)
 
 
 players_df.to_csv(OUTPUT_DIR / "players.csv", index=False)

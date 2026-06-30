@@ -1,146 +1,146 @@
 player_id,player_name,team_name,position,pro_team,pos_rank,total_points,avg_points,projected_total_points,projected_avg_points,games_played
-4278073,Shai Gilgeous-Alexander,YSK FC,PG,OKC,2,3773.0,55.49,0,0,68.0
-4871144,Alperen Sengun,YSK FC,C,HOU,3,3158.0,43.86,0,0,72.0
-4432573,Paolo Banchero,YSK FC,PF,ORL,4,2726.0,37.86,0,0,72.0
-3078576,Derrick White,YSK FC,SG,BOS,3,2865.0,37.21,0,0,77.0
-4397688,Trey Murphy III,YSK FC,SF,NOP,9,2673.0,40.5,0,0,66.0
-3059319,Andrew Wiggins,YSK FC,SF,MIA,20,2174.0,31.97,0,0,68.0
-4066354,Payton Pritchard,YSK FC,PG,BOS,9,2645.0,33.48,0,0,79.0
-3133603,Kelly Oubre Jr.,YSK FC,SF,PHL,43,1363.0,27.26,0,0,50.0
-3468,Russell Westbrook,YSK FC,PG,SAC,16,2082.0,32.53,0,0,64.0
-4278067,Nic Claxton,YSK FC,C,BKN,16,2088.0,30.26,0,0,69.0
-4432848,Jaime Jaquez Jr.,YSK FC,SF,MIA,15,2236.0,29.81,0,0,75.0
-4278594,Naji Marshall,YSK FC,SF,DAL,22,2079.0,28.09,0,0,74.0
-4395651,Coby White,YSK FC,PG,CHA,36,1306.0,26.12,0,0,50.0
-4684793,Kyle Filipowski,YSK FC,PF,UTA,10,2035.0,26.43,0,0,77.0
-4432166,Cade Cunningham,Phantom Troupe,PG,DET,5,3226.0,50.41,0,0,64.0
-4017837,Ivica Zubac,Phantom Troupe,C,IND,30,1509.0,31.44,0,0,48.0
-4395628,Zion Williamson,Phantom Troupe,PF,NOP,9,2207.0,35.6,0,0,62.0
-3978,DeMar DeRozan,Phantom Troupe,SF,SAC,11,2480.0,32.21,0,0,77.0
-4066320,Desmond Bane,Phantom Troupe,SG,ORL,2,2921.0,35.62,0,0,82.0
-3934719,OG Anunoby,Phantom Troupe,SF,NYK,17,2214.0,33.04,0,0,67.0
-3913176,Brandon Ingram,Phantom Troupe,SF,TOR,6,2742.0,35.61,0,0,77.0
-4684742,Ausar Thompson,Phantom Troupe,SF,DET,19,2188.0,29.97,0,0,73.0
-5124612,VJ Edgecombe,Phantom Troupe,SG,PHL,9,2550.0,34.0,0,0,75.0
-4432639,Jabari Smith Jr.,Phantom Troupe,PF,HOU,7,2359.0,30.64,0,0,77.0
-4395626,Tre Jones,Phantom Troupe,PG,CHI,17,2052.0,31.57,0,0,65.0
-5037871,Dylan Harper,Phantom Troupe,PG,SAS,26,1731.0,25.09,0,0,69.0
-4065648,Jayson Tatum,Phantom Troupe,PF,BOS,56,682.0,42.62,0,0,16.0
-4683634,Bennedict Mathurin,Phantom Troupe,SF,LAC,39,1424.0,26.37,0,0,54.0
-4277811,Collin Sexton,Phantom Troupe,SG,CHI,23,1766.0,25.97,0,0,68.0
-3136195,Karl-Anthony Towns,Kat's Kittens,C,NYK,4,2947.0,39.29,0,0,75.0
-4431678,Tyrese Maxey,Kat's Kittens,PG,PHL,3,3651.0,52.16,0,0,70.0
-4395625,RJ Barrett,Kat's Kittens,SF,TOR,27,1825.0,32.02,0,0,57.0
-3062679,Josh Hart,Kat's Kittens,SF,NYK,21,2099.0,31.8,0,0,66.0
-4433621,Jalen Duren,Kat's Kittens,C,DET,6,2714.0,38.77,0,0,70.0
-3064514,Julius Randle,Kat's Kittens,PF,MIN,3,2941.0,37.23,0,0,79.0
-4431680,Onyeka Okongwu,Kat's Kittens,C,ATL,9,2598.0,35.11,0,0,74.0
-4845367,Stephon Castle,Kat's Kittens,PG,SAS,13,2381.0,35.01,0,0,68.0
-3934673,Donte DiVincenzo,Kat's Kittens,SG,MIN,12,2338.0,28.51,0,0,82.0
-4601023,Oso Ighodaro,Kat's Kittens,PF,PHO,21,1685.0,20.55,0,0,82.0
-4397014,Quentin Grimes,Kat's Kittens,SG,PHL,20,1883.0,25.11,0,0,75.0
-3134907,Kyle Kuzma,Kat's Kittens,PF,MIL,23,1656.0,24.0,0,0,69.0
-4432823,Jaylin Williams,Kat's Kittens,C,OKC,40,1326.0,20.4,0,0,65.0
-5105839,Brice Sensabaugh,Kat's Kittens,SF,UTA,30,1707.0,22.76,0,0,75.0
-3945274,Luka Doncic,SKAVALASSKKYYYY,PG,LAL,1,3785.0,59.14,0,0,64.0
-3917376,Jaylen Brown,SKAVALASSKKYYYY,SF,BOS,4,3095.0,43.59,0,0,71.0
-3992,James Harden,SKAVALASSKKYYYY,PG,CLE,7,3045.0,43.5,0,0,70.0
-3975,Stephen Curry,SKAVALASSKKYYYY,PG,GSW,23,1846.0,42.93,0,0,43.0
-5041939,Cooper Flagg,SKAVALASSKKYYYY,SF,DAL,5,2778.0,39.69,0,0,70.0
-3032976,Rudy Gobert,SKAVALASSKKYYYY,C,MIN,10,2509.0,33.01,0,0,76.0
-3102531,Kristaps Porzingis,SKAVALASSKKYYYY,C,GSW,53,991.0,30.97,0,0,32.0
-3064290,Aaron Gordon,SKAVALASSKKYYYY,PF,DEN,38,1052.0,29.22,0,0,36.0
-3155526,Dillon Brooks,SKAVALASSKKYYYY,SF,PHO,33,1570.0,28.04,0,0,56.0
-5105565,Donovan Clingan,SKAVALASSKKYYYY,C,POR,7,2703.0,35.1,0,0,77.0
-4278053,Davion Mitchell,SKAVALASSKKYYYY,PG,MIA,21,1903.0,27.19,0,0,70.0
-2490149,CJ McCollum,SKAVALASSKKYYYY,SG,ATL,11,2421.0,31.86,0,0,76.0
-4395723,Keldon Johnson,SKAVALASSKKYYYY,SF,SAS,25,1921.0,23.43,0,0,82.0
-4397136,Saddiq Bey,SKAVALASSKKYYYY,SF,NOP,18,2208.0,30.67,0,0,72.0
-4873138,Ace Bailey,SKAVALASSKKYYYY,SF,UTA,28,1792.0,24.89,0,0,72.0
-4594268,Anthony Edwards,Poole Party,SG,MIN,5,2780.0,45.57,0,0,61.0
-4593803,Jalen Williams,Poole Party,PF,OKC,35,1132.0,34.3,0,0,33.0
-3149673,Pascal Siakam,Poole Party,PF,IND,6,2420.0,39.03,0,0,62.0
-4432158,Evan Mobley,Poole Party,PF,CLE,5,2658.0,40.89,0,0,65.0
-4066259,De'Aaron Fox,Poole Party,PG,SAS,10,2643.0,36.71,0,0,72.0
-5160992,Alex Sarr,Poole Party,C,WAS,23,1751.0,36.48,0,0,48.0
-3995,Jrue Holiday,Poole Party,PG,POR,25,1753.0,33.08,0,0,53.0
-4711294,Matas Buzelis,Poole Party,SF,CHI,12,2429.0,31.55,0,0,77.0
-5174563,Kyshawn George,Poole Party,SG,WAS,33,1499.0,31.23,0,0,48.0
-4395712,Andrew Nembhard,Poole Party,PG,IND,18,1941.0,34.05,0,0,57.0
-4278078,P.J. Washington,Poole Party,PF,DAL,24,1608.0,28.71,0,0,56.0
-3064482,Bobby Portis,Poole Party,PF,MIL,18,1730.0,25.82,0,0,67.0
-4395630,Devin Vassell,Poole Party,SG,SAS,22,1790.0,26.72,0,0,67.0
-3907497,Dejounte Murray,Poole Party,SG,NOP,92,504.0,36.0,0,0,14.0
-3136193,Devin Booker,Jeremy Lin fan club,PG,PHO,11,2510.0,39.22,0,0,64.0
-6478,Nikola Vucevic,Jeremy Lin fan club,C,BOS,15,2151.0,33.61,0,0,64.0
-4432816,LaMelo Ball,Jeremy Lin fan club,PG,CHA,8,2858.0,39.69,0,0,72.0
-4433255,Chet Holmgren,Jeremy Lin fan club,C,OKC,8,2625.0,38.04,0,0,69.0
-3147657,Mikal Bridges,Jeremy Lin fan club,SF,NYK,7,2731.0,33.3,0,0,82.0
-4395725,Tyler Herro,Jeremy Lin fan club,SG,MIA,52,1173.0,35.55,0,0,33.0
-4432165,Jalen Suggs,Jeremy Lin fan club,PG,ORL,19,1926.0,33.79,0,0,57.0
-5061575,Kon Knueppel,Jeremy Lin fan club,SG,CHA,8,2648.0,32.69,0,0,81.0
-4396971,Naz Reid,Jeremy Lin fan club,C,MIN,12,2279.0,29.6,0,0,77.0
-4431736,Toumani Camara,Jeremy Lin fan club,PF,POR,8,2223.0,27.11,0,0,82.0
-4709138,Brandin Podziemski,Jeremy Lin fan club,SG,GSW,13,2336.0,28.49,0,0,82.0
-4900671,Ajay Mitchell,Jeremy Lin fan club,PG,OKC,30,1592.0,27.93,0,0,57.0
-3448,Brook Lopez,Jeremy Lin fan club,C,LAC,29,1525.0,20.33,0,0,75.0
-5144126,Will Riley,Jeremy Lin fan club,SF,WAS,48,1298.0,17.54,0,0,74.0
-3032977,Giannis Antetokounmpo,Goat's,PF,MIL,14,1777.0,49.36,0,0,36.0
-3202,Kevin Durant,Goat's,PF,HOU,2,3419.0,43.83,0,0,78.0
-4066261,Bam Adebayo,Goat's,C,MIA,5,2864.0,39.23,0,0,73.0
-3936299,Jamal Murray,Goat's,PG,DEN,4,3498.0,46.64,0,0,75.0
-4395724,Immanuel Quickley,Goat's,PG,TOR,12,2484.0,35.49,0,0,70.0
-4278104,Michael Porter Jr.,Goat's,SF,BKN,23,2044.0,39.31,0,0,52.0
-4277847,Wendell Carter Jr.,Goat's,C,ORL,17,2078.0,26.64,0,0,78.0
-4278585,Collin Gillespie,Goat's,PG,PHO,14,2376.0,29.7,0,0,80.0
-6450,Kawhi Leonard,Goat's,SF,LAC,3,3163.0,48.66,0,0,65.0
-4433083,Cam Spencer,Goat's,SG,MEM,18,1955.0,27.15,0,0,72.0
-4278129,Deandre Ayton,Goat's,C,LAL,19,2023.0,28.1,0,0,72.0
-4845374,Bub Carrington,Goat's,PG,WAS,24,1836.0,22.39,0,0,82.0
-4683692,Cason Wallace,Goat's,SG,OKC,21,1872.0,24.31,0,0,77.0
-4222252,Isaiah Hartenstein,Goat's,C,OKC,35,1410.0,30.0,0,0,47.0
-5104155,Bilal Coulibaly,Goat's,SF,WAS,38,1483.0,26.48,0,0,56.0
-3112335,Nikola Jokic,Hawk Tuah Demure,C,DEN,1,4310.0,66.31,0,0,65.0
-3908809,Donovan Mitchell,Hawk Tuah Demure,SG,CLE,1,3283.0,46.9,0,0,70.0
-4871145,Josh Giddey,Hawk Tuah Demure,SG,CHI,14,2265.0,41.94,0,0,54.0
-4684740,Amen Thompson,Hawk Tuah Demure,SF,HOU,2,3194.0,40.43,0,0,79.0
-4683021,Deni Avdija,Hawk Tuah Demure,SF,POR,8,2722.0,41.24,0,0,66.0
-4997536,Gui Santos,Hawk Tuah Demure,SF,GSW,41,1382.0,20.32,0,0,68.0
-5107199,Daniss Jenkins,Hawk Tuah Demure,PG,DET,34,1421.0,19.74,0,0,72.0
-4397002,Ayo Dosunmu,Hawk Tuah Demure,SG,MIN,17,1999.0,28.97,0,0,69.0
-3134908,Jakob Poeltl,Hawk Tuah Demure,C,TOR,43,1261.0,27.41,0,0,46.0
-4251,Paul George,Hawk Tuah Demure,SF,PHL,47,1305.0,35.27,0,0,37.0
-4895758,Cody Williams,Hawk Tuah Demure,SG,UTA,51,1182.0,17.64,0,0,67.0
-4431671,Jaden McDaniels,Hawk Tuah Demure,SF,MIN,14,2245.0,30.75,0,0,73.0
-4431752,Kobe Brown,Hawk Tuah Demure,PF,IND,54,755.0,12.38,0,0,61.0
-4066336,Lauri Markkanen,Hawk Tuah Demure,PF,UTA,15,1766.0,42.05,0,0,42.0
-5144091,Jeremiah Fears,Hawk Tuah Demure,SG,NOP,15,2096.0,25.56,0,0,82.0
-1966,LeBron James,ybgcorp,SF,LAL,10,2575.0,42.92,0,0,60.0
-4869342,Dyson Daniels,ybgcorp,SG,ATL,6,2771.0,36.46,0,0,76.0
-4701230,Jalen Johnson,ybgcorp,PF,ATL,1,3496.0,48.56,0,0,72.0
-4066457,Austin Reaves,ybgcorp,SG,LAL,16,2043.0,40.06,0,0,51.0
-4066328,Jarrett Allen,ybgcorp,C,CLE,22,1865.0,33.3,0,0,56.0
-4433287,Brandon Miller,ybgcorp,SF,CHA,16,2222.0,34.18,0,0,65.0
-4591725,Ryan Rollins,ybgcorp,SG,MIL,7,2703.0,36.53,0,0,74.0
-4278039,Nickeil Alexander-Walker,ybgcorp,SG,ATL,4,2838.0,36.38,0,0,78.0
-4437244,Jalen Green,ybgcorp,SG,PHO,71,859.0,26.84,0,0,32.0
-3133628,Myles Turner,ybgcorp,C,MIL,20,1947.0,27.42,0,0,71.0
-4065733,Ty Jerome,ybgcorp,PG,MEM,62,557.0,37.13,0,0,15.0
-4277905,Trae Young,ybgcorp,PG,WAS,65,516.0,34.4,0,0,15.0
-3064230,Cameron Payne,ybgcorp,PG,FA,71,417.0,18.95,0,0,22.0
-4711297,Justin Edwards,ybgcorp,SF,PHL,67,855.0,13.36,0,0,64.0
-5104157,Victor Wembanyama,Van Der Linde Gang,C,SAS,2,3546.0,55.41,0,0,64.0
-3934672,Jalen Brunson,Van Der Linde Gang,PG,NYK,6,3121.0,42.18,0,0,74.0
-4566434,Franz Wagner,Van Der Linde Gang,SF,ORL,54,1152.0,33.88,0,0,34.0
-4433134,Scottie Barnes,Van Der Linde Gang,SF,TOR,1,3524.0,44.05,0,0,80.0
-4066383,Miles Bridges,Van Der Linde Gang,SF,CHA,13,2381.0,30.92,0,0,77.0
-2595516,Norman Powell,Van Der Linde Gang,SG,MIA,19,1887.0,32.53,0,0,58.0
-4433627,Keyonte George,Van Der Linde Gang,PG,UTA,15,2110.0,39.07,0,0,54.0
-3135045,Grayson Allen,Van Der Linde Gang,SG,PHO,30,1554.0,30.47,0,0,51.0
-4397424,Neemias Queta,Van Der Linde Gang,C,BOS,13,2256.0,29.68,0,0,76.0
-5105623,Kel'el Ware,Van Der Linde Gang,C,MIA,14,2211.0,28.71,0,0,77.0
-4711272,Reed Sheppard,Van Der Linde Gang,SG,HOU,10,2438.0,29.73,0,0,82.0
-4903027,Cedric Coward,Van Der Linde Gang,SF,MEM,31,1636.0,26.39,0,0,62.0
-4712849,Anthony Black,Van Der Linde Gang,PG,ORL,20,1910.0,29.84,0,0,64.0
-4396907,Darius Garland,Van Der Linde Gang,PG,LAC,33,1549.0,34.42,0,0,45.0
-4869780,Derik Queen,Van Der Linde Gang,C,NOP,11,2295.0,28.33,0,0,81.0
+4066261,Bam Adebayo,Goat's,C,MIA,,2864.0,39.23,0,0,73
+5104155,Bilal Coulibaly,Goat's,SF,WAS,,1483.0,26.48,0,0,56
+4845374,Bub Carrington,Goat's,PG,WAS,,1836.0,22.39,0,0,82
+4433083,Cam Spencer,Goat's,SG,MEM,,1955.0,27.15,0,0,72
+4683692,Cason Wallace,Goat's,SG,OKC,,1872.0,24.31,0,0,77
+4278585,Collin Gillespie,Goat's,PG,PHO,,2376.0,29.7,0,0,80
+4278129,Deandre Ayton,Goat's,C,LAL,,2023.0,28.1,0,0,72
+3032977,Giannis Antetokounmpo,Goat's,PF,MIL,,1777.0,49.36,0,0,36
+4395724,Immanuel Quickley,Goat's,PG,TOR,,2484.0,35.49,0,0,70
+4222252,Isaiah Hartenstein,Goat's,C,OKC,,1410.0,30.0,0,0,47
+3936299,Jamal Murray,Goat's,PG,DEN,,3498.0,46.64,0,0,75
+6450,Kawhi Leonard,Goat's,SF,LAC,,3163.0,48.66,0,0,65
+3202,Kevin Durant,Goat's,PF,HOU,,3419.0,43.83,0,0,78
+4278104,Michael Porter Jr.,Goat's,SF,BKN,,2044.0,39.31,0,0,52
+4277847,Wendell Carter Jr.,Goat's,C,ORL,,2078.0,26.64,0,0,78
+4684740,Amen Thompson,Hawk Tuah Demure,SF,HOU,,3194.0,40.43,0,0,79
+4397002,Ayo Dosunmu,Hawk Tuah Demure,SG,MIN,,1999.0,28.97,0,0,69
+4895758,Cody Williams,Hawk Tuah Demure,SG,UTA,,1182.0,17.64,0,0,67
+5107199,Daniss Jenkins,Hawk Tuah Demure,PG,DET,,1421.0,19.74,0,0,72
+4683021,Deni Avdija,Hawk Tuah Demure,SF,POR,,2722.0,41.24,0,0,66
+3908809,Donovan Mitchell,Hawk Tuah Demure,SG,CLE,,3283.0,46.9,0,0,70
+4997536,Gui Santos,Hawk Tuah Demure,SF,GSW,,1382.0,20.32,0,0,68
+4431671,Jaden McDaniels,Hawk Tuah Demure,SF,MIN,,2245.0,30.75,0,0,73
+3134908,Jakob Poeltl,Hawk Tuah Demure,C,TOR,,1261.0,27.41,0,0,46
+5144091,Jeremiah Fears,Hawk Tuah Demure,SG,NOP,,2096.0,25.56,0,0,82
+4871145,Josh Giddey,Hawk Tuah Demure,SG,CHI,,2265.0,41.94,0,0,54
+4431752,Kobe Brown,Hawk Tuah Demure,PF,IND,,755.0,12.38,0,0,61
+4066336,Lauri Markkanen,Hawk Tuah Demure,PF,UTA,,1766.0,42.05,0,0,42
+3112335,Nikola Jokic,Hawk Tuah Demure,C,DEN,,4310.0,66.31,0,0,65
+4251,Paul George,Hawk Tuah Demure,SF,PHL,,1305.0,35.27,0,0,37
+4900671,Ajay Mitchell,Jeremy Lin fan club,PG,OKC,,1592.0,27.93,0,0,57
+4709138,Brandin Podziemski,Jeremy Lin fan club,SG,GSW,,2336.0,28.49,0,0,82
+3448,Brook Lopez,Jeremy Lin fan club,C,LAC,,1525.0,20.33,0,0,75
+4433255,Chet Holmgren,Jeremy Lin fan club,C,OKC,,2625.0,38.04,0,0,69
+3136193,Devin Booker,Jeremy Lin fan club,PG,PHO,,2510.0,39.22,0,0,64
+4432165,Jalen Suggs,Jeremy Lin fan club,PG,ORL,,1926.0,33.79,0,0,57
+5061575,Kon Knueppel,Jeremy Lin fan club,SG,CHA,,2648.0,32.69,0,0,81
+4432816,LaMelo Ball,Jeremy Lin fan club,PG,CHA,,2858.0,39.69,0,0,72
+3147657,Mikal Bridges,Jeremy Lin fan club,SF,NYK,,2731.0,33.3,0,0,82
+4396971,Naz Reid,Jeremy Lin fan club,C,MIN,,2279.0,29.6,0,0,77
+6478,Nikola Vucevic,Jeremy Lin fan club,C,BOS,,2151.0,33.61,0,0,64
+4431736,Toumani Camara,Jeremy Lin fan club,PF,POR,,2223.0,27.11,0,0,82
+4395725,Tyler Herro,Jeremy Lin fan club,SG,MIA,,1173.0,35.55,0,0,33
+5144126,Will Riley,Jeremy Lin fan club,SF,WAS,,1298.0,17.54,0,0,74
+5105839,Brice Sensabaugh,Kat's Kittens,SF,UTA,,1707.0,22.76,0,0,75
+3934673,Donte DiVincenzo,Kat's Kittens,SG,MIN,,2338.0,28.51,0,0,82
+4433621,Jalen Duren,Kat's Kittens,C,DET,,2714.0,38.77,0,0,70
+4432823,Jaylin Williams,Kat's Kittens,C,OKC,,1326.0,20.4,0,0,65
+3062679,Josh Hart,Kat's Kittens,SF,NYK,,2099.0,31.8,0,0,66
+3064514,Julius Randle,Kat's Kittens,PF,MIN,,2941.0,37.23,0,0,79
+3136195,Karl-Anthony Towns,Kat's Kittens,C,NYK,,2947.0,39.29,0,0,75
+3134907,Kyle Kuzma,Kat's Kittens,PF,MIL,,1656.0,24.0,0,0,69
+4431680,Onyeka Okongwu,Kat's Kittens,C,ATL,,2598.0,35.11,0,0,74
+4601023,Oso Ighodaro,Kat's Kittens,PF,PHO,,1685.0,20.55,0,0,82
+4397014,Quentin Grimes,Kat's Kittens,SG,PHL,,1883.0,25.11,0,0,75
+4395625,RJ Barrett,Kat's Kittens,SF,TOR,,1825.0,32.02,0,0,57
+4845367,Stephon Castle,Kat's Kittens,PG,SAS,,2381.0,35.01,0,0,68
+4431678,Tyrese Maxey,Kat's Kittens,PG,PHL,,3651.0,52.16,0,0,70
+4684742,Ausar Thompson,Phantom Troupe,SF,DET,,2188.0,29.97,0,0,73
+4683634,Bennedict Mathurin,Phantom Troupe,SF,LAC,,1424.0,26.37,0,0,54
+3913176,Brandon Ingram,Phantom Troupe,SF,TOR,,2742.0,35.61,0,0,77
+4432166,Cade Cunningham,Phantom Troupe,PG,DET,,3226.0,50.41,0,0,64
+4277811,Collin Sexton,Phantom Troupe,SG,CHI,,1766.0,25.97,0,0,68
+3978,DeMar DeRozan,Phantom Troupe,SF,SAC,,2480.0,32.21,0,0,77
+4066320,Desmond Bane,Phantom Troupe,SG,ORL,,2921.0,35.62,0,0,82
+5037871,Dylan Harper,Phantom Troupe,PG,SAS,,1731.0,25.09,0,0,69
+4017837,Ivica Zubac,Phantom Troupe,C,IND,,1509.0,31.44,0,0,48
+4432639,Jabari Smith Jr.,Phantom Troupe,PF,HOU,,2359.0,30.64,0,0,77
+4065648,Jayson Tatum,Phantom Troupe,PF,BOS,,682.0,42.62,0,0,16
+3934719,OG Anunoby,Phantom Troupe,SF,NYK,,2214.0,33.04,0,0,67
+4395626,Tre Jones,Phantom Troupe,PG,CHI,,2052.0,31.57,0,0,65
+5124612,VJ Edgecombe,Phantom Troupe,SG,PHL,,2550.0,34.0,0,0,75
+4395628,Zion Williamson,Phantom Troupe,PF,NOP,,2207.0,35.6,0,0,62
+5160992,Alex Sarr,Poole Party,C,WAS,,1751.0,36.48,0,0,48
+4395712,Andrew Nembhard,Poole Party,PG,IND,,1941.0,34.05,0,0,57
+4594268,Anthony Edwards,Poole Party,SG,MIN,,2780.0,45.57,0,0,61
+3064482,Bobby Portis,Poole Party,PF,MIL,,1730.0,25.82,0,0,67
+4066259,De'Aaron Fox,Poole Party,PG,SAS,,2643.0,36.71,0,0,72
+3907497,Dejounte Murray,Poole Party,SG,NOP,,504.0,36.0,0,0,14
+4395630,Devin Vassell,Poole Party,SG,SAS,,1790.0,26.72,0,0,67
+4432158,Evan Mobley,Poole Party,PF,CLE,,2658.0,40.89,0,0,65
+4593803,Jalen Williams,Poole Party,PF,OKC,,1132.0,34.3,0,0,33
+3995,Jrue Holiday,Poole Party,PG,POR,,1753.0,33.08,0,0,53
+5174563,Kyshawn George,Poole Party,SG,WAS,,1499.0,31.23,0,0,48
+4711294,Matas Buzelis,Poole Party,SF,CHI,,2429.0,31.55,0,0,77
+4278078,P.J. Washington,Poole Party,PF,DAL,,1608.0,28.71,0,0,56
+3149673,Pascal Siakam,Poole Party,PF,IND,,2420.0,39.03,0,0,62
+3064290,Aaron Gordon,SKAVALASSKKYYYY,PF,DEN,,1052.0,29.22,0,0,36
+4873138,Ace Bailey,SKAVALASSKKYYYY,SF,UTA,,1792.0,24.89,0,0,72
+2490149,CJ McCollum,SKAVALASSKKYYYY,SG,ATL,,2421.0,31.86,0,0,76
+5041939,Cooper Flagg,SKAVALASSKKYYYY,SF,DAL,,2778.0,39.69,0,0,70
+4278053,Davion Mitchell,SKAVALASSKKYYYY,PG,MIA,,1903.0,27.19,0,0,70
+3155526,Dillon Brooks,SKAVALASSKKYYYY,SF,PHO,,1570.0,28.04,0,0,56
+5105565,Donovan Clingan,SKAVALASSKKYYYY,C,POR,,2703.0,35.1,0,0,77
+3992,James Harden,SKAVALASSKKYYYY,PG,CLE,,3045.0,43.5,0,0,70
+3917376,Jaylen Brown,SKAVALASSKKYYYY,SF,BOS,,3095.0,43.59,0,0,71
+4395723,Keldon Johnson,SKAVALASSKKYYYY,SF,SAS,,1921.0,23.43,0,0,82
+3102531,Kristaps Porzingis,SKAVALASSKKYYYY,C,GSW,,991.0,30.97,0,0,32
+3945274,Luka Doncic,SKAVALASSKKYYYY,PG,LAL,,3785.0,59.14,0,0,64
+3032976,Rudy Gobert,SKAVALASSKKYYYY,C,MIN,,2509.0,33.01,0,0,76
+4397136,Saddiq Bey,SKAVALASSKKYYYY,SF,NOP,,2208.0,30.67,0,0,72
+3975,Stephen Curry,SKAVALASSKKYYYY,PG,GSW,,1846.0,42.93,0,0,43
+4712849,Anthony Black,Van Der Linde Gang,PG,ORL,,1910.0,29.84,0,0,64
+4903027,Cedric Coward,Van Der Linde Gang,SF,MEM,,1636.0,26.39,0,0,62
+4396907,Darius Garland,Van Der Linde Gang,PG,LAC,,1549.0,34.42,0,0,45
+4869780,Derik Queen,Van Der Linde Gang,C,NOP,,2295.0,28.33,0,0,81
+4566434,Franz Wagner,Van Der Linde Gang,SF,ORL,,1152.0,33.88,0,0,34
+3135045,Grayson Allen,Van Der Linde Gang,SG,PHO,,1554.0,30.47,0,0,51
+3934672,Jalen Brunson,Van Der Linde Gang,PG,NYK,,3121.0,42.18,0,0,74
+5105623,Kel'el Ware,Van Der Linde Gang,C,MIA,,2211.0,28.71,0,0,77
+4433627,Keyonte George,Van Der Linde Gang,PG,UTA,,2110.0,39.07,0,0,54
+4066383,Miles Bridges,Van Der Linde Gang,SF,CHA,,2381.0,30.92,0,0,77
+4397424,Neemias Queta,Van Der Linde Gang,C,BOS,,2256.0,29.68,0,0,76
+2595516,Norman Powell,Van Der Linde Gang,SG,MIA,,1887.0,32.53,0,0,58
+4711272,Reed Sheppard,Van Der Linde Gang,SG,HOU,,2438.0,29.73,0,0,82
+4433134,Scottie Barnes,Van Der Linde Gang,SF,TOR,,3524.0,44.05,0,0,80
+5104157,Victor Wembanyama,Van Der Linde Gang,C,SAS,,3546.0,55.41,0,0,64
+4066457,Austin Reaves,ybgcorp,SG,LAL,,2043.0,40.06,0,0,51
+4433287,Brandon Miller,ybgcorp,SF,CHA,,2222.0,34.18,0,0,65
+3064230,Cameron Payne,ybgcorp,PG,FA,,417.0,18.95,0,0,22
+4869342,Dyson Daniels,ybgcorp,SG,ATL,,2771.0,36.46,0,0,76
+4437244,Jalen Green,ybgcorp,SG,PHO,,859.0,26.84,0,0,32
+4701230,Jalen Johnson,ybgcorp,PF,ATL,,3496.0,48.56,0,0,72
+4066328,Jarrett Allen,ybgcorp,C,CLE,,1865.0,33.3,0,0,56
+4711297,Justin Edwards,ybgcorp,SF,PHL,,855.0,13.36,0,0,64
+1966,LeBron James,ybgcorp,SF,LAL,,2575.0,42.92,0,0,60
+3133628,Myles Turner,ybgcorp,C,MIL,,1947.0,27.42,0,0,71
+4278039,Nickeil Alexander-Walker,ybgcorp,SG,ATL,,2838.0,36.38,0,0,78
+4591725,Ryan Rollins,ybgcorp,SG,MIL,,2703.0,36.53,0,0,74
+4277905,Trae Young,ybgcorp,PG,WAS,,516.0,34.4,0,0,15
+4065733,Ty Jerome,ybgcorp,PG,MEM,,557.0,37.13,0,0,15
+4871144,Alperen Sengun,YSK FC,C,HOU,,3158.0,43.86,0,0,72
+3059319,Andrew Wiggins,YSK FC,SF,MIA,,2174.0,31.97,0,0,68
+4395651,Coby White,YSK FC,PG,CHA,,1306.0,26.12,0,0,50
+3078576,Derrick White,YSK FC,SG,BOS,,2865.0,37.21,0,0,77
+4432848,Jaime Jaquez Jr.,YSK FC,SF,MIA,,2236.0,29.81,0,0,75
+3133603,Kelly Oubre Jr.,YSK FC,SF,PHL,,1363.0,27.26,0,0,50
+4684793,Kyle Filipowski,YSK FC,PF,UTA,,2035.0,26.43,0,0,77
+4278594,Naji Marshall,YSK FC,SF,DAL,,2079.0,28.09,0,0,74
+4278067,Nic Claxton,YSK FC,C,BKN,,2088.0,30.26,0,0,69
+4432573,Paolo Banchero,YSK FC,PF,ORL,,2726.0,37.86,0,0,72
+4066354,Payton Pritchard,YSK FC,PG,BOS,,2645.0,33.48,0,0,79
+3468,Russell Westbrook,YSK FC,PG,SAC,,2082.0,32.53,0,0,64
+4278073,Shai Gilgeous-Alexander,YSK FC,PG,OKC,,3773.0,55.49,0,0,68
+4397688,Trey Murphy III,YSK FC,SF,NOP,,2673.0,40.5,0,0,66
