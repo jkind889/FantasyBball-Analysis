@@ -1,5 +1,7 @@
 import pandas as pd
 
+from cache import BreakoutPlayerCache, _player_summary as _row_player_summary
+
 
 BREAKOUT_COLUMNS = [
     "player_id",
@@ -20,14 +22,24 @@ BREAKOUT_COLUMNS = [
 def build_breakout_players(
     current_league,
     previous_league,
+    conn=None,
+    previous_player_cache=None,
     min_current_gp=41,
     min_previous_gp=20,
 ):
     current_players = _dedupe_players(
         _rostered_players(current_league) + _fetch_free_agents(current_league)
     )
-    previous_rostered = _index_players(_rostered_players(previous_league))
-    free_agent_cache = {}
+    if previous_player_cache is None and conn is not None:
+        previous_player_cache = BreakoutPlayerCache(
+            conn,
+            previous_league.year,
+            previous_league=previous_league,
+        )
+
+    if previous_player_cache is None:
+        previous_rostered = _index_players(_rostered_players(previous_league))
+        free_agent_cache = {}
 
     rows = []
     for current_player in current_players:
@@ -35,16 +47,24 @@ def build_breakout_players(
         if current_summary["games_played"] < min_current_gp:
             continue
 
-        previous_player, previous_source = _find_previous_player(
-            current_player,
-            previous_league,
-            previous_rostered,
-            free_agent_cache,
-        )
+        if previous_player_cache is not None:
+            previous_player, previous_source = previous_player_cache.find_previous_player(
+                current_summary
+            )
+        else:
+            previous_player, previous_source = _find_previous_player(
+                current_player,
+                previous_league,
+                previous_rostered,
+                free_agent_cache,
+            )
         if previous_player is None:
             continue
 
-        previous_summary = _player_summary(previous_player)
+        if previous_player_cache is not None:
+            previous_summary = _row_player_summary(previous_player)
+        else:
+            previous_summary = _player_summary(previous_player)
         if previous_summary["games_played"] < min_previous_gp:
             continue
 
@@ -93,9 +113,6 @@ def _rostered_players(league):
 
 
 def _fetch_free_agents(league, position=None):
-    # Fetch free agents from the league. Different league APIs may accept
-    # different argument signatures, so try the size+position call first and
-    # fall back to alternative signatures on TypeError.
     try:
         return league.free_agents(size=500, position=position)
     except TypeError:
@@ -110,12 +127,6 @@ def _find_previous_player(
     previous_rostered,
     free_agent_cache,
 ):
-    # Try to find the matching player in the previous season.
-    # 1) Prefer exact `playerId` matches in the previous roster index.
-    # 2) If missing, fall back to a position-scoped free-agent index cached
-    #    in `free_agent_cache` to avoid repeated expensive fetches/indexing.
-    # The function returns (player_or_None, source) where source is
-    # one of "roster", "free_agent", or "missing".
     player_id = _player_id(current_player)
     player_name = _player_name(current_player)
 
@@ -240,7 +251,6 @@ def _season_stats(player):
 
 
 def _number(value):
-    # Normalize numeric-like fields so arithmetic doesn't crash on None.
     if value is None:
         return 0
     return value
@@ -255,7 +265,7 @@ def _player_name(player):
 
 
 def _normalized_name(name):
-    # Lowercase and collapse whitespace to create a canonical name key.
     if not name:
         return None
     return " ".join(str(name).lower().split())
+

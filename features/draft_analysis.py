@@ -1,12 +1,13 @@
 import pandas as pd
-from features.build_breakout_players import (
+from cache import (
+    espn_player_to_row,
     _fetch_free_agents,
     _index_players,
     _lookup_player,
     _player_summary,
 )
 
-MIN_GAMES_PLAYED = 19
+MIN_GAMES_PLAYED = 21
 DRAFT_BUCKET_SIZE = 5
 
 PLAYER_STAT_COLUMNS = [
@@ -244,11 +245,16 @@ def fetch_missing_draft_analysis_data(draft_analysis_df, league):
         if pd.isna(position):
             position = None
 
-        cache_key = position
+        season_year = getattr(league, "year", None)
+        cache_key = (season_year, position)
 
         if cache_key not in free_agent_cache:
+            free_agent_rows = [
+                espn_player_to_row(player, season_year)
+                for player in _fetch_free_agents(league, position=position)
+            ]
             free_agent_cache[cache_key] = _index_players(
-                _fetch_free_agents(league, position=position)
+                free_agent_rows
             )
 
         missing_player = _lookup_player(
@@ -316,10 +322,10 @@ def _draft_player_summary(player, fallback_player_id):
         "team_name": None,
         "position": summary["position"],
         "pro_team": summary["pro_team"],
-        "pos_rank": getattr(player, "posRank", None),
+        "pos_rank": player.get("pos_rank"),
         "total_points": summary["total_points"],
         "avg_points": summary["avg_points"],
-        "projected_total_points": getattr(player, "projected_total_points", None),
-        "projected_avg_points": getattr(player, "projected_avg_points", None),
+        "projected_total_points": player.get("projected_total_points"),
+        "projected_avg_points": player.get("projected_avg_points"),
         "games_played": summary["games_played"],
     }

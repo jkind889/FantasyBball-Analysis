@@ -1,3 +1,4 @@
 espn-api
 pandas
 python-dotenv
+mysql-connector-python

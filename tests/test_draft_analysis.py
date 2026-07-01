@@ -172,11 +172,11 @@ class DraftAnalysisTest(unittest.TestCase):
         self.assertEqual(result["vope_percentile"].tolist(), [50] * 10)
         self.assertEqual(result["value_status"].tolist(), ["Fair"] * 10)
 
-    def test_twenty_games_is_eligible_and_nineteen_is_not(self):
+    def test_twenty_one_games_is_eligible_and_twenty_is_not(self):
         players_df = pd.DataFrame([
-            make_player_row(1, "Injured Qualifier", 800, games_played=20),
+            make_player_row(1, "Injured Qualifier", 840, games_played=21),
             make_player_row(2, "Healthy Peer", 1200, games_played=60),
-            make_player_row(3, "Below Minimum", 900, games_played=19),
+            make_player_row(3, "Below Minimum", 900, games_played=20),
         ])
         draft_df = pd.DataFrame([
             make_draft_row(1, "Injured Qualifier", 1, 1),
@@ -186,9 +186,12 @@ class DraftAnalysisTest(unittest.TestCase):
 
         result = draft_analysis(players_df, draft_df).set_index("player_name")
 
-        self.assertEqual(result.loc["Injured Qualifier", "expected_total_points"], 1000)
-        self.assertEqual(result.loc["Injured Qualifier", "vope_score"], -200)
-        self.assertEqual(result.loc["Injured Qualifier", "percent_above_expected"], -20)
+        self.assertEqual(result.loc["Injured Qualifier", "expected_total_points"], 1020)
+        self.assertEqual(result.loc["Injured Qualifier", "vope_score"], -180)
+        self.assertAlmostEqual(
+            result.loc["Injured Qualifier", "percent_above_expected"],
+            -180 / 1020 * 100,
+        )
         self.assertTrue(pd.isna(result.loc["Below Minimum", "vope_score"]))
         self.assertTrue(pd.isna(result.loc["Below Minimum", "vope_percentile"]))
         self.assertEqual(result.loc["Below Minimum", "value_status"], "Insufficient GP")

@@ -1,6 +1,10 @@
 import unittest
+from unittest.mock import patch
 from types import SimpleNamespace
 
+import pandas as pd
+
+from cache import BreakoutPlayerCache
 from features.build_breakout_players import build_breakout_players
 
 
@@ -42,6 +46,22 @@ class FakeLeague:
         if position is None:
             return self.free_agents_list
         return self.free_agents_by_position.get(position, [])
+
+
+class FakePreviousPlayerCache:
+    def __init__(self, previous_rows):
+        self.previous_rows = {
+            row["player_id"]: row
+            for row in previous_rows
+        }
+        self.lookups = []
+
+    def find_previous_player(self, current_player_row):
+        self.lookups.append(current_player_row["player_id"])
+        previous_row = self.previous_rows.get(current_player_row["player_id"])
+        if previous_row is None:
+            return None, "missing"
+        return previous_row, "database"
 
 
 class BuildBreakoutPlayersTest(unittest.TestCase):
@@ -123,6 +143,83 @@ class BuildBreakoutPlayersTest(unittest.TestCase):
         result = build_breakout_players(current_league, previous_league)
 
         self.assertEqual(result["player_id"].tolist(), [1])
+
+    def test_uses_previous_player_cache_rows_when_provided(self):
+        current = make_player(1, "Database Jump", 32, 1920, 60)
+        current_league = FakeLeague(2025, teams=[make_team(current)])
+        previous_league = FakeLeague(2024)
+        previous_cache = FakePreviousPlayerCache([
+            {
+                "player_id": 1,
+                "player_name": "Database Jump",
+                "position": "PG",
+                "pro_team": "NBA",
+                "avg_points": 14,
+                "total_points": 840,
+                "games_played": 60,
+            }
+        ])
+
+        result = build_breakout_players(
+            current_league,
+            previous_league,
+            previous_player_cache=previous_cache,
+        )
+
+        self.assertEqual(result["player_id"].tolist(), [1])
+        self.assertEqual(result["source_previous_season"].tolist(), ["database"])
+        self.assertEqual(result["previous_avg_points"].tolist(), [14])
+        self.assertEqual(result["avg_points_jump"].tolist(), [18])
+        self.assertEqual(previous_cache.lookups, [1])
+        self.assertEqual(previous_league.free_agent_calls, [])
+
+    def test_breakout_player_cache_falls_back_to_previous_free_agents_once_per_position(self):
+        previous_free_agent = make_player(
+            2,
+            "Free Agent Jump",
+            10,
+            600,
+            60,
+            position="SG",
+            year=2024,
+        )
+        previous_league = FakeLeague(
+            2024,
+            free_agents_by_position={"SG": [previous_free_agent]},
+        )
+        empty_previous_rows = pd.DataFrame(
+            columns=[
+                "player_id",
+                "player_name",
+                "position",
+                "pro_team",
+                "avg_points",
+                "total_points",
+                "games_played",
+            ]
+        )
+
+        with patch("cache._fetch_previous_rostered_players", return_value=empty_previous_rows):
+            previous_cache = BreakoutPlayerCache(
+                None,
+                2024,
+                previous_league=previous_league,
+            )
+
+        current_row = {
+            "player_id": 2,
+            "player_name": "Free Agent Jump",
+            "position": "SG",
+        }
+
+        first_match, first_source = previous_cache.find_previous_player(current_row)
+        second_match, second_source = previous_cache.find_previous_player(current_row)
+
+        self.assertEqual(first_source, "free_agent")
+        self.assertEqual(second_source, "free_agent")
+        self.assertEqual(first_match["player_id"], 2)
+        self.assertEqual(second_match["avg_points"], 10)
+        self.assertEqual(previous_league.free_agent_calls, [(500, "SG")])
 
 
 if __name__ == "__main__":
