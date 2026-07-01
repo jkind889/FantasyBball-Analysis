@@ -157,6 +157,12 @@ def insert_finalrosters(current_league):
             )
     conn.commit()
 
+insert_players_from_draft(current_league)
+insert_players_from_finalrosters(current_league)
+insert_playerseason_players(current_league,previous_league)
+insert_finalrosters(current_league)
+
+
 players_df = pd.read_sql(
     """
     SELECT
@@ -232,12 +238,9 @@ roster_points_comparison_df = roster_points_comparison.roster_points_comparison(
 breakout_players_df = build_breakout_players.build_breakout_players(
     current_league,
     previous_league,
+    conn=conn,
     min_current_gp=MIN_GAMES_PLAYED,
 )
 breakout_players_df.to_csv(RESULTS_DIR / "breakout_players.csv", index=False)
 build_matchups_df = build_matchups.build_matchups(current_league, start_week=1, end_week=22)
 
-insert_players_from_draft(current_league)
-insert_players_from_finalrosters(current_league)
-insert_playerseason_players(current_league,previous_league)
-insert_finalrosters(current_league)
