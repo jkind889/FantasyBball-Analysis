@@ -10,6 +10,8 @@ import features.roster_points_comparison as roster_points_comparison
 import features.build_players_weekly as build_players_weekly
 import features.build_matchups as build_matchups
 import features.build_breakout_players as build_breakout_players
+import features.build_digest as build_digest
+from alerts.send_email import send_digest_email
 from database import get_connection
 
 
@@ -157,6 +159,31 @@ def insert_finalrosters(current_league):
             )
     conn.commit()
 
+def insert_matchups(cursor,matchups_df):
+    for row in matchups_df.itertuples(index=False):
+        cursor.execute(
+            """
+            INSERT INTO matchups (season_year,week,home_team_id,away_team_id,home_score,away_score,winner_team_id,margin)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+            ON DUPLICATE KEY UPDATE
+            home_score = VALUES(home_score),
+            away_score = VALUES(away_score),
+            winner_team_id = VALUES(winner_team_id),
+            margin = VALUES(margin)
+            """,
+            (
+                row.season_year,
+                row.week,
+                row.home_team_id,
+                row.away_team_id,
+                row.home_score,
+                row.away_score,
+                row.winner_team_id,
+                row.margin,
+            ),
+        )
+    conn.commit()
+
 insert_players_from_draft(current_league)
 insert_players_from_finalrosters(current_league)
 insert_playerseason_players(current_league,previous_league)
@@ -242,5 +269,27 @@ breakout_players_df = build_breakout_players.build_breakout_players(
     min_current_gp=MIN_GAMES_PLAYED,
 )
 breakout_players_df.to_csv(RESULTS_DIR / "breakout_players.csv", index=False)
-build_matchups_df = build_matchups.build_matchups(current_league, start_week=1, end_week=22)
+build_matchups_df = build_matchups.build_matchups(
+    current_league, start_week=1, end_week=22, season_year=current_year
+)
+insert_matchups(cursor, build_matchups_df)
+build_matchups_df.to_csv(RESULTS_DIR / "matchups.csv", index=False)
+
+alert_from = os.environ.get("ALERT_EMAIL_FROM")
+alert_to = os.environ.get("ALERT_EMAIL_TO")
+alert_app_password = os.environ.get("ALERT_EMAIL_APP_PASSWORD")
+
+if alert_from and alert_to and alert_app_password:
+    try:
+        subject, body = build_digest.build_digest(
+            build_matchups_df,
+            breakout_players_df,
+            draft_analysis_df,
+            season_year=current_year,
+        )
+        send_digest_email(subject, body, alert_to, alert_from, alert_app_password)
+    except Exception as error:
+        print(f"Warning: failed to send digest email: {error}")
+else:
+    print("Skipping digest email: ALERT_EMAIL_FROM/ALERT_EMAIL_TO/ALERT_EMAIL_APP_PASSWORD not set")
 

@@ -85,14 +85,29 @@ Key fields:
 
 The breakout workflow uses `cache.py` to look up previous-season player rows from the database first. If a player is missing from the database and a previous ESPN league object is available, the cache can fall back to previous-season free agents by position and convert ESPN player objects into dictionary rows.
 
-### Matchup and Weekly Player Builders
+### Matchup Analysis
 
-The project also includes helper builders for weekly data:
+`features/build_matchups.py` builds one row per matchup per week from ESPN box scores, for weeks `1` through `22`.
 
-- `features/build_matchups.py`: builds matchup rows from ESPN box scores.
-- `features/build_players_weekly.py`: builds weekly player lineup rows from ESPN box scores.
+Outputs:
 
-`main.py` currently builds matchups for weeks `1` through `22`, though this output is not written to CSV yet.
+- `reports/matchups.csv`
+- `matchups` MySQL table (upserted each run, keyed on `season_year`, `week`, `home_team_id`, `away_team_id`)
+
+Key fields:
+
+- `winner_team_id` / `loser_team_id`: `NULL` on a tie.
+- `margin`: absolute point difference between the two teams.
+
+### Weekly Player Builder
+
+`features/build_players_weekly.py` builds weekly player lineup rows (points, lineup slot, started/benched, injury status) from ESPN box scores. It is available for other features to use but is not yet wired into `main.py`'s output.
+
+### Weekly Email Digest
+
+`features/build_digest.py` builds a short text summary of the latest run — closest matchup, biggest blowout, top riser, and best draft value pick — and, if `alerts/send_email.py` sends it via Gmail SMTP.
+
+The digest is sent automatically at the end of `main.py` when `ALERT_EMAIL_FROM`, `ALERT_EMAIL_TO`, and `ALERT_EMAIL_APP_PASSWORD` are set in `.env`. If any of these are missing, `main.py` skips the email and continues (the digest step never blocks the rest of the run).
 
 ## Generated Files
 
@@ -108,6 +123,7 @@ The project also includes helper builders for weekly data:
 - `reports/projection_analysis.csv`
 - `reports/roster_points_comparison.csv`
 - `reports/breakout_players.csv`
+- `reports/matchups.csv`
 
 ## Setup
 
@@ -130,7 +146,12 @@ DB_PORT=3306
 DB_NAME=fantasy_basketball
 DB_USER=root
 DB_PASSWORD=your_password
+ALERT_EMAIL_FROM=your_gmail_address@gmail.com
+ALERT_EMAIL_TO=your_gmail_address@gmail.com
+ALERT_EMAIL_APP_PASSWORD=your_gmail_app_password
 ```
+
+`ALERT_EMAIL_*` are optional — omit them to skip the weekly email digest. `ALERT_EMAIL_APP_PASSWORD` must be a Gmail [App Password](https://support.google.com/accounts/answer/185833), not your regular account password.
 
 The script expects a MySQL database with tables for:
 
@@ -139,6 +160,24 @@ The script expects a MySQL database with tables for:
 - `draft_picks`
 - `player_season`
 - `final_rosters`
+- `matchups`
+
+Create the `matchups` table with:
+
+```sql
+CREATE TABLE matchups (
+    matchup_id INT AUTO_INCREMENT PRIMARY KEY,
+    season_year INT NOT NULL,
+    week INT NOT NULL,
+    home_team_id INT NOT NULL,
+    away_team_id INT NOT NULL,
+    home_score DECIMAL(8,2) NOT NULL,
+    away_score DECIMAL(8,2) NOT NULL,
+    winner_team_id INT NULL,
+    margin DECIMAL(8,2) NOT NULL,
+    UNIQUE KEY uniq_matchup (season_year, week, home_team_id, away_team_id)
+);
+```
 
 ## Run
 
@@ -147,6 +186,26 @@ venv/bin/python main.py
 ```
 
 After a successful run, check `data/` for source snapshots and `reports/` for analysis outputs.
+
+### Weekly scheduling (macOS `launchd`)
+
+Since MySQL runs locally, this project schedules `main.py` with `launchd` rather than a cloud CI cron (GitHub Actions runners can't reach `localhost`).
+
+1. `scripts/run_main.sh` runs `main.py` with the venv's Python and logs output to `logs/main.log`.
+2. `com.fantasybball-analysis.weekly.plist` is a `launchd` agent template that calls the script weekly (Sunday nights by default). Copy it into `~/Library/LaunchAgents/` and edit the `<string>` paths to match your local repo location before loading it:
+
+```bash
+cp com.fantasybball-analysis.weekly.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.fantasybball-analysis.weekly.plist
+```
+
+To stop it:
+
+```bash
+launchctl unload ~/Library/LaunchAgents/com.fantasybball-analysis.weekly.plist
+```
+
+Note that `launchd` only runs the job if your Mac is on and awake at the scheduled time — it does not run in the cloud.
 
 ## Tests
 

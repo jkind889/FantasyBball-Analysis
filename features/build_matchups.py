@@ -1,6 +1,9 @@
 import pandas as pd
 
-def build_matchups(league,start_week,end_week):
+def build_matchups(league,start_week,end_week,season_year=None):
+    if season_year is None:
+        season_year = league.year
+
     matchup_rows = []
 
     for week in range(start_week, end_week + 1):  # Assuming a 22-week season
@@ -13,14 +16,21 @@ def build_matchups(league,start_week,end_week):
             if home_score > away_score:
                 winner = box.home_team.team_name
                 loser = box.away_team.team_name
+                winner_team_id = box.home_team.team_id
+                loser_team_id = box.away_team.team_id
             elif away_score > home_score:
                 winner = box.away_team.team_name
                 loser = box.home_team.team_name
+                winner_team_id = box.away_team.team_id
+                loser_team_id = box.home_team.team_id
             else:
                 winner = "Tie"
                 loser = "Tie"
+                winner_team_id = None
+                loser_team_id = None
 
             matchup_rows.append({
+                "season_year": season_year,
                 "week": week,
 
                 "home_team_id": box.home_team.team_id,
@@ -33,6 +43,8 @@ def build_matchups(league,start_week,end_week):
 
                 "winner": winner,
                 "loser": loser,
+                "winner_team_id": winner_team_id,
+                "loser_team_id": loser_team_id,
                 "margin": abs(home_score - away_score)
             })
 
