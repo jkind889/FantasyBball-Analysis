@@ -23,7 +23,23 @@ def _best_value_pick(draft_analysis_df):
     return scored.loc[scored["vope_score"].idxmax()]
 
 
-def build_digest(matchups_df, breakout_players_df, draft_analysis_df, season_year, week=None):
+def _upset_of_the_week(biggest_upsets_df, week):
+    if biggest_upsets_df is None or biggest_upsets_df.empty:
+        return None
+    week_upsets = biggest_upsets_df[biggest_upsets_df["week"] == week]
+    if week_upsets.empty:
+        return None
+    return week_upsets.loc[week_upsets["avg_gap"].idxmax()]
+
+
+def build_digest(
+    matchups_df,
+    breakout_players_df,
+    draft_analysis_df,
+    season_year,
+    week=None,
+    biggest_upsets_df=None,
+):
     if week is None and not matchups_df.empty:
         week = matchups_df["week"].max()
 
@@ -42,6 +58,15 @@ def build_digest(matchups_df, breakout_players_df, draft_analysis_df, season_yea
         lines.append(
             f"Biggest blowout: {blowout['winner']} beat {blowout['loser']} by {blowout['margin']:.1f}"
         )
+
+    if week is not None:
+        upset = _upset_of_the_week(biggest_upsets_df, week)
+        if upset is not None:
+            lines.append(
+                f"Upset of the week: {upset['winner']} "
+                f"(avg {upset['winner_season_avg_entering_week']:.1f}) beat "
+                f"{upset['loser']} (avg {upset['loser_season_avg_entering_week']:.1f})"
+            )
 
     top_riser = _top_riser(breakout_players_df)
     if top_riser is not None:

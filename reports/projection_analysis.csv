@@ -1,0 +1,182 @@
+player_name,roster_source,draft_team,final_team,position,pro_team,games_played,actual_total_points,projected_total_points,projection_difference,projection_percentile,percent_above_projection,projection_status
+Nikola Jokic,Both,Hawk Tuah Demure,Hawk Tuah Demure,C,DEN,65.0,4310.0,0.0,4310.0,100.0,,Far Above Projection
+Luka Doncic,Both,SKAVALASSKKYYYY,SKAVALASSKKYYYY,PG,LAL,64.0,3785.0,0.0,3785.0,99.44,,Far Above Projection
+Shai Gilgeous-Alexander,Both,YSK FC,YSK FC,PG,OKC,68.0,3773.0,0.0,3773.0,98.89,,Far Above Projection
+Tyrese Maxey,Both,Kat's Kittens,Kat's Kittens,PG,PHL,70.0,3651.0,0.0,3651.0,98.33,,Far Above Projection
+Victor Wembanyama,Both,Van Der Linde Gang,Van Der Linde Gang,C,SAS,64.0,3546.0,0.0,3546.0,97.78,,Far Above Projection
+Scottie Barnes,Both,Van Der Linde Gang,Van Der Linde Gang,SF,TOR,80.0,3524.0,0.0,3524.0,97.22,,Far Above Projection
+Jamal Murray,Both,Goat's,Goat's,PG,DEN,75.0,3498.0,0.0,3498.0,96.67,,Far Above Projection
+Jalen Johnson,Both,ybgcorp,ybgcorp,PF,ATL,72.0,3496.0,0.0,3496.0,96.11,,Far Above Projection
+Kevin Durant,Both,Goat's,Goat's,PF,HOU,78.0,3419.0,0.0,3419.0,95.56,,Far Above Projection
+Donovan Mitchell,Both,Hawk Tuah Demure,Hawk Tuah Demure,SG,CLE,70.0,3283.0,0.0,3283.0,95.0,,Far Above Projection
+Cade Cunningham,Both,Phantom Troupe,Phantom Troupe,PG,DET,64.0,3226.0,0.0,3226.0,94.44,,Far Above Projection
+Amen Thompson,Both,Hawk Tuah Demure,Hawk Tuah Demure,SF,HOU,79.0,3194.0,0.0,3194.0,93.89,,Far Above Projection
+Kawhi Leonard,Both,Goat's,Goat's,SF,LAC,65.0,3163.0,0.0,3163.0,93.33,,Far Above Projection
+Alperen Sengun,Both,YSK FC,YSK FC,C,HOU,72.0,3158.0,0.0,3158.0,92.78,,Far Above Projection
+Jalen Brunson,Both,Van Der Linde Gang,Van Der Linde Gang,PG,NYK,74.0,3121.0,0.0,3121.0,92.22,,Far Above Projection
+Jaylen Brown,Both,SKAVALASSKKYYYY,SKAVALASSKKYYYY,SF,BOS,71.0,3095.0,0.0,3095.0,91.67,,Far Above Projection
+James Harden,Both,SKAVALASSKKYYYY,SKAVALASSKKYYYY,PG,CLE,70.0,3045.0,0.0,3045.0,91.11,,Far Above Projection
+Karl-Anthony Towns,Both,Kat's Kittens,Kat's Kittens,C,NYK,75.0,2947.0,0.0,2947.0,90.56,,Far Above Projection
+Julius Randle,Both,Kat's Kittens,Kat's Kittens,PF,MIN,79.0,2941.0,0.0,2941.0,90.0,,Far Above Projection
+Desmond Bane,Both,Phantom Troupe,Phantom Troupe,SG,ORL,82.0,2921.0,0.0,2921.0,89.44,,Above Projection
+Derrick White,Both,YSK FC,YSK FC,SG,BOS,77.0,2865.0,0.0,2865.0,88.89,,Above Projection
+Bam Adebayo,Both,Goat's,Goat's,C,MIA,73.0,2864.0,0.0,2864.0,88.33,,Above Projection
+LaMelo Ball,Both,Jeremy Lin fan club,Jeremy Lin fan club,PG,CHA,72.0,2858.0,0.0,2858.0,87.78,,Above Projection
+Nickeil Alexander-Walker,Final,,ybgcorp,SG,ATL,78.0,2838.0,0.0,2838.0,87.22,,Above Projection
+Anthony Edwards,Both,Poole Party,Poole Party,SG,MIN,61.0,2780.0,0.0,2780.0,86.67,,Above Projection
+Cooper Flagg,Both,SKAVALASSKKYYYY,SKAVALASSKKYYYY,SF,DAL,70.0,2778.0,0.0,2778.0,86.11,,Above Projection
+Dyson Daniels,Both,ybgcorp,ybgcorp,SG,ATL,76.0,2771.0,0.0,2771.0,85.56,,Above Projection
+Brandon Ingram,Both,Phantom Troupe,Phantom Troupe,SF,TOR,77.0,2742.0,0.0,2742.0,85.0,,Above Projection
+Mikal Bridges,Both,Jeremy Lin fan club,Jeremy Lin fan club,SF,NYK,82.0,2731.0,0.0,2731.0,84.44,,Above Projection
+Paolo Banchero,Both,YSK FC,YSK FC,PF,ORL,72.0,2726.0,0.0,2726.0,83.89,,Above Projection
+Deni Avdija,Both,Van Der Linde Gang,Hawk Tuah Demure,SF,POR,66.0,2722.0,0.0,2722.0,83.33,,Above Projection
+Jalen Duren,Both,Kat's Kittens,Kat's Kittens,C,DET,70.0,2714.0,0.0,2714.0,82.78,,Above Projection
+Donovan Clingan,Final,,SKAVALASSKKYYYY,C,POR,77.0,2703.0,0.0,2703.0,81.94,,Above Projection
+Ryan Rollins,Final,,ybgcorp,SG,MIL,74.0,2703.0,0.0,2703.0,81.94,,Above Projection
+Trey Murphy III,Both,YSK FC,YSK FC,SF,NOP,66.0,2673.0,0.0,2673.0,81.11,,Above Projection
+Evan Mobley,Both,Poole Party,Poole Party,PF,CLE,65.0,2658.0,0.0,2658.0,80.56,,Above Projection
+Kon Knueppel,Final,,Jeremy Lin fan club,SG,CHA,81.0,2648.0,0.0,2648.0,80.0,,Above Projection
+Payton Pritchard,Both,YSK FC,YSK FC,PG,BOS,79.0,2645.0,0.0,2645.0,79.44,,Above Projection
+De'Aaron Fox,Both,Poole Party,Poole Party,PG,SAS,72.0,2643.0,0.0,2643.0,78.89,,Above Projection
+Chet Holmgren,Both,Jeremy Lin fan club,Jeremy Lin fan club,C,OKC,69.0,2625.0,0.0,2625.0,78.33,,Above Projection
+Onyeka Okongwu,Both,Kat's Kittens,Kat's Kittens,C,ATL,74.0,2598.0,0.0,2598.0,77.78,,Above Projection
+LeBron James,Both,ybgcorp,ybgcorp,SF,LAL,60.0,2575.0,0.0,2575.0,77.22,,Above Projection
+VJ Edgecombe,Final,,Phantom Troupe,SG,PHL,75.0,2550.0,0.0,2550.0,76.67,,Above Projection
+Devin Booker,Both,Jeremy Lin fan club,Jeremy Lin fan club,PG,PHO,64.0,2510.0,0.0,2510.0,76.11,,Above Projection
+Rudy Gobert,Both,SKAVALASSKKYYYY,SKAVALASSKKYYYY,C,MIN,76.0,2509.0,0.0,2509.0,75.56,,Above Projection
+Immanuel Quickley,Both,Goat's,Goat's,PG,TOR,70.0,2484.0,0.0,2484.0,75.0,,Above Projection
+DeMar DeRozan,Both,Phantom Troupe,Phantom Troupe,SF,SAC,77.0,2480.0,0.0,2480.0,74.44,,Near Projection
+Reed Sheppard,Final,,Van Der Linde Gang,SG,HOU,82.0,2438.0,0.0,2438.0,73.89,,Near Projection
+Matas Buzelis,Final,,Poole Party,SF,CHI,77.0,2429.0,0.0,2429.0,73.33,,Near Projection
+CJ McCollum,Both,Goat's,SKAVALASSKKYYYY,SG,ATL,76.0,2421.0,0.0,2421.0,72.78,,Near Projection
+Pascal Siakam,Both,Poole Party,Poole Party,PF,IND,62.0,2420.0,0.0,2420.0,72.22,,Near Projection
+Miles Bridges,Both,Van Der Linde Gang,Van Der Linde Gang,SF,CHA,77.0,2381.0,0.0,2381.0,71.39,,Near Projection
+Stephon Castle,Both,Kat's Kittens,Kat's Kittens,PG,SAS,68.0,2381.0,0.0,2381.0,71.39,,Near Projection
+Collin Gillespie,Final,,Goat's,PG,PHO,80.0,2376.0,0.0,2376.0,70.56,,Near Projection
+Jabari Smith Jr.,Final,,Phantom Troupe,PF,HOU,77.0,2359.0,0.0,2359.0,70.0,,Near Projection
+Donte DiVincenzo,Final,,Kat's Kittens,SG,MIN,82.0,2338.0,0.0,2338.0,69.44,,Near Projection
+Brandin Podziemski,Final,,Jeremy Lin fan club,SG,GSW,82.0,2336.0,0.0,2336.0,68.89,,Near Projection
+Derik Queen,Final,,Van Der Linde Gang,C,NOP,81.0,2295.0,0.0,2295.0,68.33,,Near Projection
+Naz Reid,Both,SKAVALASSKKYYYY,Jeremy Lin fan club,C,MIN,77.0,2279.0,0.0,2279.0,67.78,,Near Projection
+Josh Giddey,Both,Hawk Tuah Demure,Hawk Tuah Demure,SG,CHI,54.0,2265.0,0.0,2265.0,67.22,,Near Projection
+Neemias Queta,Final,,Van Der Linde Gang,C,BOS,76.0,2256.0,0.0,2256.0,66.67,,Near Projection
+Jaden McDaniels,Both,Jeremy Lin fan club,Hawk Tuah Demure,SF,MIN,73.0,2245.0,0.0,2245.0,66.11,,Near Projection
+Jaime Jaquez Jr.,Final,,YSK FC,SF,MIA,75.0,2236.0,0.0,2236.0,65.56,,Near Projection
+Toumani Camara,Both,Hawk Tuah Demure,Jeremy Lin fan club,PF,POR,82.0,2223.0,0.0,2223.0,65.0,,Near Projection
+Brandon Miller,Both,ybgcorp,ybgcorp,SF,CHA,65.0,2222.0,0.0,2222.0,64.44,,Near Projection
+OG Anunoby,Both,Phantom Troupe,Phantom Troupe,SF,NYK,67.0,2214.0,0.0,2214.0,63.89,,Near Projection
+Kel'el Ware,Both,Van Der Linde Gang,Van Der Linde Gang,C,MIA,77.0,2211.0,0.0,2211.0,63.33,,Near Projection
+Saddiq Bey,Final,,SKAVALASSKKYYYY,SF,NOP,72.0,2208.0,0.0,2208.0,62.78,,Near Projection
+Zion Williamson,Both,Phantom Troupe,Phantom Troupe,PF,NOP,62.0,2207.0,0.0,2207.0,62.22,,Near Projection
+Ausar Thompson,Both,Phantom Troupe,Phantom Troupe,SF,DET,73.0,2188.0,0.0,2188.0,61.67,,Near Projection
+Andrew Wiggins,Both,YSK FC,YSK FC,SF,MIA,68.0,2174.0,0.0,2174.0,61.11,,Near Projection
+Nikola Vucevic,Both,Jeremy Lin fan club,Jeremy Lin fan club,C,BOS,64.0,2151.0,0.0,2151.0,60.56,,Near Projection
+Keyonte George,Both,Van Der Linde Gang,Van Der Linde Gang,PG,UTA,54.0,2110.0,0.0,2110.0,60.0,,Near Projection
+Josh Hart,Both,Kat's Kittens,Kat's Kittens,SF,NYK,66.0,2099.0,0.0,2099.0,59.44,,Near Projection
+Jeremiah Fears,Final,,Hawk Tuah Demure,SG,NOP,82.0,2096.0,0.0,2096.0,58.89,,Near Projection
+Nic Claxton,Both,SKAVALASSKKYYYY,YSK FC,C,BKN,69.0,2088.0,0.0,2088.0,58.33,,Near Projection
+Russell Westbrook,Final,,YSK FC,PG,SAC,64.0,2082.0,0.0,2082.0,57.78,,Near Projection
+Naji Marshall,Final,,YSK FC,SF,DAL,74.0,2079.0,0.0,2079.0,57.22,,Near Projection
+Wendell Carter Jr.,Final,,Goat's,C,ORL,78.0,2078.0,0.0,2078.0,56.67,,Near Projection
+Tre Jones,Final,,Phantom Troupe,PG,CHI,65.0,2052.0,0.0,2052.0,56.11,,Near Projection
+Michael Porter Jr.,Both,Poole Party,Goat's,SF,BKN,52.0,2044.0,0.0,2044.0,55.56,,Near Projection
+Austin Reaves,Both,ybgcorp,ybgcorp,SG,LAL,51.0,2043.0,0.0,2043.0,55.0,,Near Projection
+Kyle Filipowski,Final,,YSK FC,PF,UTA,77.0,2035.0,0.0,2035.0,54.44,,Near Projection
+Deandre Ayton,Both,Van Der Linde Gang,Goat's,C,LAL,72.0,2023.0,0.0,2023.0,53.89,,Near Projection
+Ayo Dosunmu,Final,,Hawk Tuah Demure,SG,MIN,69.0,1999.0,0.0,1999.0,53.33,,Near Projection
+Cam Spencer,Final,,Goat's,SG,MEM,72.0,1955.0,0.0,1955.0,52.78,,Near Projection
+Myles Turner,Both,Van Der Linde Gang,ybgcorp,C,MIL,71.0,1947.0,0.0,1947.0,52.22,,Near Projection
+Andrew Nembhard,Both,YSK FC,Poole Party,PG,IND,57.0,1941.0,0.0,1941.0,51.67,,Near Projection
+Jalen Suggs,Both,Jeremy Lin fan club,Jeremy Lin fan club,PG,ORL,57.0,1926.0,0.0,1926.0,51.11,,Near Projection
+Keldon Johnson,Final,,SKAVALASSKKYYYY,SF,SAS,82.0,1921.0,0.0,1921.0,50.56,,Near Projection
+Anthony Black,Final,,Van Der Linde Gang,PG,ORL,64.0,1910.0,0.0,1910.0,50.0,,Near Projection
+Davion Mitchell,Final,,SKAVALASSKKYYYY,PG,MIA,70.0,1903.0,0.0,1903.0,49.44,,Near Projection
+Norman Powell,Both,Van Der Linde Gang,Van Der Linde Gang,SG,MIA,58.0,1887.0,0.0,1887.0,48.89,,Near Projection
+Quentin Grimes,Both,ybgcorp,Kat's Kittens,SG,PHL,75.0,1883.0,0.0,1883.0,48.33,,Near Projection
+Cason Wallace,Final,,Goat's,SG,OKC,77.0,1872.0,0.0,1872.0,47.78,,Near Projection
+Jarrett Allen,Both,ybgcorp,ybgcorp,C,CLE,56.0,1865.0,0.0,1865.0,47.22,,Near Projection
+Stephen Curry,Both,SKAVALASSKKYYYY,SKAVALASSKKYYYY,PG,GSW,43.0,1846.0,0.0,1846.0,46.67,,Near Projection
+Bub Carrington,Final,,Goat's,PG,WAS,82.0,1836.0,0.0,1836.0,46.11,,Near Projection
+RJ Barrett,Both,Kat's Kittens,Kat's Kittens,SF,TOR,57.0,1825.0,0.0,1825.0,45.56,,Near Projection
+Ace Bailey,Both,Poole Party,SKAVALASSKKYYYY,SF,UTA,72.0,1792.0,0.0,1792.0,45.0,,Near Projection
+Devin Vassell,Both,Hawk Tuah Demure,Poole Party,SG,SAS,67.0,1790.0,0.0,1790.0,44.44,,Near Projection
+Giannis Antetokounmpo,Both,Goat's,Goat's,PF,MIL,36.0,1777.0,0.0,1777.0,43.89,,Near Projection
+Collin Sexton,Both,Poole Party,Phantom Troupe,SG,CHI,68.0,1766.0,0.0,1766.0,43.06,,Near Projection
+Lauri Markkanen,Both,Hawk Tuah Demure,Hawk Tuah Demure,PF,UTA,42.0,1766.0,0.0,1766.0,43.06,,Near Projection
+Jrue Holiday,Final,,Poole Party,PG,POR,53.0,1753.0,0.0,1753.0,42.22,,Near Projection
+Alex Sarr,Both,Poole Party,Poole Party,C,WAS,48.0,1751.0,0.0,1751.0,41.67,,Near Projection
+Dylan Harper,Final,,Phantom Troupe,PG,SAS,69.0,1731.0,0.0,1731.0,41.11,,Near Projection
+Bobby Portis,Both,Phantom Troupe,Poole Party,PF,MIL,67.0,1730.0,0.0,1730.0,40.56,,Near Projection
+Brice Sensabaugh,Final,,Kat's Kittens,SF,UTA,75.0,1707.0,0.0,1707.0,40.0,,Near Projection
+Oso Ighodaro,Final,,Kat's Kittens,PF,PHO,82.0,1685.0,0.0,1685.0,39.44,,Near Projection
+Kyle Kuzma,Final,,Kat's Kittens,PF,MIL,69.0,1656.0,0.0,1656.0,38.89,,Near Projection
+Cedric Coward,Final,,Van Der Linde Gang,SF,MEM,62.0,1636.0,0.0,1636.0,38.33,,Near Projection
+P.J. Washington,Final,,Poole Party,PF,DAL,56.0,1608.0,0.0,1608.0,37.78,,Near Projection
+Ajay Mitchell,Final,,Jeremy Lin fan club,PG,OKC,57.0,1592.0,0.0,1592.0,37.22,,Near Projection
+Dillon Brooks,Final,,SKAVALASSKKYYYY,SF,PHO,56.0,1570.0,0.0,1570.0,36.67,,Near Projection
+Grayson Allen,Final,,Van Der Linde Gang,SG,PHO,51.0,1554.0,0.0,1554.0,36.11,,Near Projection
+Darius Garland,Both,Hawk Tuah Demure,Van Der Linde Gang,PG,LAC,45.0,1549.0,0.0,1549.0,35.56,,Near Projection
+Brook Lopez,Final,,Jeremy Lin fan club,C,LAC,75.0,1525.0,0.0,1525.0,35.0,,Near Projection
+Ivica Zubac,Both,Phantom Troupe,Phantom Troupe,C,IND,48.0,1509.0,0.0,1509.0,34.44,,Near Projection
+Kyshawn George,Final,,Poole Party,SG,WAS,48.0,1499.0,0.0,1499.0,33.89,,Near Projection
+Bilal Coulibaly,Final,,Goat's,SF,WAS,56.0,1483.0,0.0,1483.0,33.33,,Near Projection
+Bennedict Mathurin,Both,Van Der Linde Gang,Phantom Troupe,SF,LAC,54.0,1424.0,0.0,1424.0,32.78,,Near Projection
+Daniss Jenkins,Final,,Hawk Tuah Demure,PG,DET,72.0,1421.0,0.0,1421.0,32.22,,Near Projection
+Isaiah Hartenstein,Both,ybgcorp,Goat's,C,OKC,47.0,1410.0,0.0,1410.0,31.67,,Near Projection
+Gui Santos,Final,,Hawk Tuah Demure,SF,GSW,68.0,1382.0,0.0,1382.0,31.11,,Near Projection
+Kelly Oubre Jr.,Both,YSK FC,YSK FC,SF,PHL,50.0,1363.0,0.0,1363.0,30.56,,Near Projection
+Jaylin Williams,Final,,Kat's Kittens,C,OKC,65.0,1326.0,0.0,1326.0,30.0,,Near Projection
+Coby White,Both,Phantom Troupe,YSK FC,PG,CHA,50.0,1306.0,0.0,1306.0,29.44,,Near Projection
+Paul George,Both,Kat's Kittens,Hawk Tuah Demure,SF,PHL,37.0,1305.0,0.0,1305.0,28.89,,Near Projection
+Will Riley,Final,,Jeremy Lin fan club,SF,WAS,74.0,1298.0,0.0,1298.0,28.33,,Near Projection
+Jakob Poeltl,Both,ybgcorp,Hawk Tuah Demure,C,TOR,46.0,1261.0,0.0,1261.0,27.78,,Near Projection
+Cody Williams,Final,,Hawk Tuah Demure,SG,UTA,67.0,1182.0,0.0,1182.0,27.22,,Near Projection
+Tyler Herro,Both,Jeremy Lin fan club,Jeremy Lin fan club,SG,MIA,33.0,1173.0,0.0,1173.0,26.67,,Near Projection
+Franz Wagner,Both,Van Der Linde Gang,Van Der Linde Gang,SF,ORL,34.0,1152.0,0.0,1152.0,26.11,,Near Projection
+Jalen Williams,Both,Poole Party,Poole Party,PF,OKC,33.0,1132.0,0.0,1132.0,25.56,,Near Projection
+Aaron Gordon,Both,SKAVALASSKKYYYY,SKAVALASSKKYYYY,PF,DEN,36.0,1052.0,0.0,1052.0,25.0,,Below Projection
+Kristaps Porzingis,Both,SKAVALASSKKYYYY,SKAVALASSKKYYYY,C,GSW,32.0,991.0,0.0,991.0,24.44,,Below Projection
+Jalen Green,Both,Poole Party,ybgcorp,SG,PHO,32.0,859.0,0.0,859.0,23.89,,Below Projection
+Justin Edwards,Final,,ybgcorp,SF,PHL,64.0,855.0,0.0,855.0,23.33,,Below Projection
+Kobe Brown,Final,,Hawk Tuah Demure,PF,IND,61.0,755.0,0.0,755.0,22.78,,Below Projection
+Jayson Tatum,Final,,Phantom Troupe,PF,BOS,16.0,682.0,0.0,682.0,22.22,,Below Projection
+Ty Jerome,Both,Phantom Troupe,ybgcorp,PG,MEM,15.0,557.0,0.0,557.0,21.67,,Below Projection
+Trae Young,Both,ybgcorp,ybgcorp,PG,WAS,15.0,516.0,0.0,516.0,21.11,,Below Projection
+Dejounte Murray,Final,,Poole Party,SG,NOP,14.0,504.0,0.0,504.0,20.56,,Below Projection
+Cameron Payne,Final,,ybgcorp,PG,FA,22.0,417.0,0.0,417.0,20.0,,Below Projection
+Bronny James,Draft,Jeremy Lin fan club,,PG,LAL,42.0,289.0,517.0,-228.0,19.44,-44.1,Below Projection
+Draymond Green,Draft,YSK FC,,PF,GSW,68.0,1742.0,2127.0,-385.0,18.89,-18.1,Below Projection
+John Collins,Draft,Phantom Troupe,,PF,LAC,69.0,1818.0,2250.0,-432.0,18.33,-19.2,Below Projection
+Tre Johnson,Draft,Poole Party,,SG,WAS,60.0,1164.0,1654.0,-490.0,17.78,-29.63,Below Projection
+Tobias Harris,Draft,SKAVALASSKKYYYY,,PF,DET,63.0,1703.0,2210.0,-507.0,17.22,-22.94,Below Projection
+Luguentz Dort,Draft,Goat's,,SG,OKC,69.0,1233.0,1756.0,-523.0,16.67,-29.78,Below Projection
+Cameron Johnson,Draft,Goat's,,SF,DEN,54.0,1353.0,1929.0,-576.0,16.11,-29.86,Below Projection
+Klay Thompson,Draft,SKAVALASSKKYYYY,,SG,DAL,69.0,1274.0,1900.0,-626.0,15.56,-32.95,Below Projection
+Mark Williams,Draft,Hawk Tuah Demure,,C,PHO,60.0,1690.0,2323.0,-633.0,15.0,-27.25,Below Projection
+Shaedon Sharpe,Draft,Goat's,,SG,POR,50.0,1510.0,2219.0,-709.0,14.44,-31.95,Below Projection
+Daniel Gafford,Draft,Phantom Troupe,,C,DAL,55.0,1383.0,2126.0,-743.0,13.89,-34.95,Below Projection
+T.J. McConnell,Draft,Kat's Kittens,,PG,IND,56.0,1405.0,2150.0,-745.0,13.33,-34.65,Below Projection
+Santi Aldama,Draft,Jeremy Lin fan club,,PF,MEM,43.0,1313.0,2107.0,-794.0,12.78,-37.68,Below Projection
+Jaren Jackson Jr.,Draft,YSK FC,,C,UTA,48.0,1674.0,2501.0,-827.0,12.22,-33.07,Below Projection
+Malik Monk,Draft,Van Der Linde Gang,,SG,SAC,62.0,1354.0,2226.0,-872.0,11.67,-39.17,Below Projection
+Kevin Porter Jr.,Draft,Jeremy Lin fan club,,SG,MIL,38.0,1598.0,2544.0,-946.0,11.11,-37.19,Below Projection
+Joel Embiid,Draft,Hawk Tuah Demure,,C,PHL,38.0,1653.0,2669.0,-1016.0,10.56,-38.07,Below Projection
+Anfernee Simons,Draft,Poole Party,,SG,CHI,55.0,1252.0,2345.0,-1093.0,10.0,-46.61,Far Below Projection
+Jimmy Butler III,Draft,Goat's,,SF,GSW,38.0,1484.0,2608.0,-1124.0,9.44,-43.1,Far Below Projection
+Jaden Ivey,Draft,ybgcorp,,SG,FA,37.0,622.0,1791.0,-1169.0,8.89,-65.27,Far Below Projection
+Christian Braun,Draft,ybgcorp,,SG,DEN,44.0,1095.0,2532.0,-1437.0,8.33,-56.75,Far Below Projection
+Keegan Murray,Draft,Hawk Tuah Demure,,PF,SAC,23.0,687.0,2141.0,-1454.0,7.78,-67.91,Far Below Projection
+Obi Toppin,Draft,YSK FC,,PF,IND,24.0,525.0,1980.0,-1455.0,7.22,-73.48,Far Below Projection
+Zach LaVine,Draft,Goat's,,SG,SAC,39.0,1097.0,2570.0,-1473.0,6.67,-57.32,Far Below Projection
+Cam Thomas,Draft,Jeremy Lin fan club,,SG,FA,42.0,695.0,2175.0,-1480.0,6.11,-68.05,Far Below Projection
+Cam Whitmore,Draft,Kat's Kittens,,SF,WAS,21.0,330.0,1981.0,-1651.0,5.56,-83.34,Far Below Projection
+D'Angelo Russell,Draft,Poole Party,,PG,WAS,26.0,463.0,2167.0,-1704.0,5.0,-78.63,Far Below Projection
+Scotty Pippen Jr.,Draft,Kat's Kittens,,PG,MEM,10.0,263.0,1979.0,-1716.0,4.44,-86.71,Far Below Projection
+Jordan Poole,Draft,YSK FC,,SG,NOP,39.0,815.0,2549.0,-1734.0,3.89,-68.03,Far Below Projection
+Bradley Beal,Draft,Goat's,,SF,LAC,6.0,61.0,1893.0,-1832.0,3.33,-96.78,Far Below Projection
+Chris Paul,Draft,SKAVALASSKKYYYY,,PG,FA,16.0,182.0,2023.0,-1841.0,2.78,-91.0,Far Below Projection
+Kyrie Irving,Draft,ybgcorp,,PG,DAL,0.0,0.0,1876.0,-1876.0,2.22,-100.0,Far Below Projection
+Ja Morant,Draft,Hawk Tuah Demure,,PG,MEM,20.0,688.0,2973.0,-2285.0,1.67,-76.86,Far Below Projection
+Walker Kessler,Draft,Hawk Tuah Demure,,C,UTA,5.0,203.0,2584.0,-2381.0,1.11,-92.14,Far Below Projection
+Anthony Davis,Draft,Kat's Kittens,,C,WAS,20.0,870.0,3659.0,-2789.0,0.56,-76.22,Far Below Projection
+Domantas Sabonis,Draft,Jeremy Lin fan club,,C,SAC,19.0,662.0,3495.0,-2833.0,0.0,-81.06,Far Below Projection

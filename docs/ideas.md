@@ -5,13 +5,13 @@ Backlog of scaling ideas and new features, captured 2026-08-27, updated 2026-08-
 ## Done
 
 - **Wire up matchups output** — `build_matchups` now writes `reports/matchups.csv` and upserts into a `matchups` MySQL table (see `main.py`, `features/build_matchups.py`).
-- **Alerts / digest** — `features/build_digest.py` + `alerts/send_email.py` send a weekly email digest (closest matchup, blowout, top riser, best draft value) from `main.py`, gated on `ALERT_EMAIL_*` env vars.
+- **Alerts / digest** — `features/build_digest.py` + `alerts/send_email.py` send a weekly email digest (closest matchup, blowout, upset of the week, top riser, best draft value) from `main.py`, gated on `ALERT_EMAIL_*` env vars.
 - **Automate the run** — weekly `launchd` scheduling via `scripts/run_main.sh` + `com.fantasybball-analysis.weekly.plist` (GitHub Actions was ruled out — the MySQL DB is local-only and unreachable from a hosted runner).
+- **Finish `features/biggest_upset.py`** — an upset is a win despite a lower season-average score, computed from weeks played *before* that matchup only, ranked by average-score gap. Outputs `reports/biggest_upsets.csv` and feeds an "Upset of the week" line into the email digest.
 
 ## Low effort, uses what's already built
 
 - **Wire up weekly players output** — `features/build_players_weekly.py` exists and is fully built but is never called from `main.py`. Same treatment: CSV/DB output.
-- **Finish `features/biggest_upset.py`** — currently an empty file. Natural fit now that matchups are wired up: define an upset (e.g. win despite lower season-average score, or largest win by a team with fewer wins-to-date) and rank them.
 - **Manager power rankings** — combine weekly wins, points-for/against, and roster efficiency (started vs. bench points) from `players_weekly` into a single ranking report. Note: `Team` objects from `espn-api` already expose `points_for`/`points_against`/`standing`/`final_standing` directly, so a power-rankings report may not even need to hand-sum from `matchups`.
 
 ## Medium — new analysis features (same pattern as existing `features/*.py`)

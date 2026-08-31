@@ -99,13 +99,28 @@ Key fields:
 - `winner_team_id` / `loser_team_id`: `NULL` on a tie.
 - `margin`: absolute point difference between the two teams.
 
+### Biggest Upset Analysis
+
+`features/biggest_upset.py` finds matchups where a team won despite having a lower season average score than its opponent, using each team's average from weeks played *before* that matchup only (not full-season, so a blowout can't inflate its own baseline).
+
+Output:
+
+- `reports/biggest_upsets.csv`
+
+Key fields:
+
+- `winner_season_avg_entering_week` / `loser_season_avg_entering_week`: each team's average score from prior weeks only.
+- `avg_gap`: `loser_season_avg_entering_week - winner_season_avg_entering_week` — how the report is ranked, biggest gap first.
+
+A team's first matchup of the season has no prior average and is excluded, as are ties.
+
 ### Weekly Player Builder
 
 `features/build_players_weekly.py` builds weekly player lineup rows (points, lineup slot, started/benched, injury status) from ESPN box scores. It is available for other features to use but is not yet wired into `main.py`'s output.
 
 ### Weekly Email Digest
 
-`features/build_digest.py` builds a short text summary of the latest run — closest matchup, biggest blowout, top riser, and best draft value pick — and, if `alerts/send_email.py` sends it via Gmail SMTP.
+`features/build_digest.py` builds a short text summary of the latest run — closest matchup, biggest blowout, upset of the week, top riser, and best draft value pick — and, if `alerts/send_email.py` sends it via Gmail SMTP.
 
 The digest is sent automatically at the end of `main.py` when `ALERT_EMAIL_FROM`, `ALERT_EMAIL_TO`, and `ALERT_EMAIL_APP_PASSWORD` are set in `.env`. If any of these are missing, `main.py` skips the email and continues (the digest step never blocks the rest of the run).
 
@@ -124,6 +139,7 @@ The digest is sent automatically at the end of `main.py` when `ALERT_EMAIL_FROM`
 - `reports/roster_points_comparison.csv`
 - `reports/breakout_players.csv`
 - `reports/matchups.csv`
+- `reports/biggest_upsets.csv`
 
 ## Setup
 
@@ -166,18 +182,17 @@ Create the `matchups` table with:
 
 ```sql
 CREATE TABLE matchups (
-    matchup_id INT AUTO_INCREMENT PRIMARY KEY,
     season_year INT NOT NULL,
     week INT NOT NULL,
     home_team_id INT NOT NULL,
     away_team_id INT NOT NULL,
-    home_score DECIMAL(8,2) NOT NULL,
-    away_score DECIMAL(8,2) NOT NULL,
-    winner_team_id INT NULL,
-    margin DECIMAL(8,2) NOT NULL,
-    UNIQUE KEY uniq_matchup (season_year, week, home_team_id, away_team_id)
+    home_score FLOAT,
+    away_score FLOAT,
+    PRIMARY KEY (season_year, week, home_team_id, away_team_id)
 );
 ```
+
+`winner_team_id` and `margin` are not stored in the database — they're derived in-memory each run (in `features/build_matchups.py`) for the CSV report, the email digest, and `features/biggest_upset.py`, since they're always cheap to recompute from `home_score`/`away_score`.
 
 ## Run
 

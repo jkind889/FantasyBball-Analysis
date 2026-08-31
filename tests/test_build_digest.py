@@ -91,6 +91,56 @@ class BuildDigestTest(unittest.TestCase):
             "Best draft value so far: Player X (Team A), vope score 120.0", body
         )
 
+    def _biggest_upsets_df(self):
+        return pd.DataFrame([
+            {
+                "week": 1,
+                "winner": "Team B",
+                "loser": "Team A",
+                "winner_season_avg_entering_week": 70.0,
+                "loser_season_avg_entering_week": 120.0,
+                "avg_gap": 50.0,
+            },
+        ])
+
+    def test_includes_upset_of_the_week_when_present(self):
+        _, body = build_digest(
+            self._matchups_df(),
+            self._breakout_players_df(),
+            self._draft_analysis_df(),
+            season_year=2026,
+            week=1,
+            biggest_upsets_df=self._biggest_upsets_df(),
+        )
+
+        self.assertIn(
+            "Upset of the week: Team B (avg 70.0) beat Team A (avg 120.0)", body
+        )
+
+    def test_omits_upset_line_when_no_upset_that_week(self):
+        _, body = build_digest(
+            self._matchups_df(),
+            self._breakout_players_df(),
+            self._draft_analysis_df(),
+            season_year=2026,
+            week=2,
+            biggest_upsets_df=self._biggest_upsets_df(),
+        )
+
+        self.assertNotIn("Upset of the week", body)
+
+    def test_works_without_biggest_upsets_df_argument(self):
+        subject, body = build_digest(
+            self._matchups_df(),
+            self._breakout_players_df(),
+            self._draft_analysis_df(),
+            season_year=2026,
+            week=1,
+        )
+
+        self.assertNotIn("Upset of the week", body)
+        self.assertIn("Week 1", subject)
+
     def test_handles_empty_inputs_without_error(self):
         subject, body = build_digest(
             pd.DataFrame(columns=["week", "home_team", "home_score", "away_team", "away_score", "winner", "loser", "margin"]),
