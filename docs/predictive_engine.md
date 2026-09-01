@@ -47,14 +47,23 @@ produced so positional scarcity is visible.
 
 This single number ranks a draft board and a waiver list.
 
-### 3. NBA schedule / games-remaining — `features/nba_schedule.py` (TODO)
+### 3. NBA schedule / games-remaining — `features/nba_schedule.py` (done, first pass)
 
-The one new data source. A `nba_schedule` table (pro_team, game_date,
-fantasy_week). Derives:
+ESPN already returns the full pro-team schedule on the `League` object
+(`league.pro_schedule`). `build_nba_schedule()` flattens it to one row per
+(team, game): `pro_team, opponent, is_home, game_date, scoring_period,
+fantasy_week`, persisted to a `nba_schedule` table (DDL in
+`CREATE_TABLE_SQL`, created on first run) and `reports/nba_schedule.csv`.
 
-- `games_remaining` per player (feeds piece 1 exactly)
-- games **per fantasy week** per team — a 4-game week streamer is worth more
-  than a better player on a 2-game week; this is the biggest in-season edge.
+`fantasy_week` comes from `league.matchup_ids` when available, else 7-day
+buckets (so it works pre-season before ESPN publishes played weeks).
+
+Derives:
+
+- `games_remaining(schedule_df, as_of)` -> `{pro_team: count}`; `attach_games_remaining()`
+  maps it onto a players frame to feed piece 1 exactly.
+- `games_per_week(schedule_df)` -> team x week grid — a 4-game week streamer is
+  worth more than a better player on a 2-game week; the biggest in-season edge.
 
 ### 4. Entry points (TODO)
 

@@ -14,6 +14,7 @@ import features.biggest_upset as biggest_upset
 import features.lineup_efficiency as lineup_efficiency
 import features.manager_power_rankings as manager_power_rankings
 import features.build_digest as build_digest
+import features.nba_schedule as nba_schedule
 from alerts.send_email import send_digest_email
 from database import get_connection
 
@@ -183,6 +184,32 @@ def insert_matchups(cursor,matchups_df):
         )
     conn.commit()
 
+def insert_nba_schedule(cursor, schedule_df):
+    cursor.execute(nba_schedule.CREATE_TABLE_SQL)
+    for row in schedule_df.itertuples(index=False):
+        cursor.execute(
+            """
+            INSERT INTO nba_schedule
+                (season_year,pro_team,opponent,is_home,game_date,scoring_period,fantasy_week)
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+            ON DUPLICATE KEY UPDATE
+            opponent = VALUES(opponent),
+            is_home = VALUES(is_home),
+            scoring_period = VALUES(scoring_period),
+            fantasy_week = VALUES(fantasy_week)
+            """,
+            (
+                row.season_year,
+                row.pro_team,
+                row.opponent,
+                row.is_home,
+                row.game_date,
+                row.scoring_period,
+                row.fantasy_week,
+            ),
+        )
+    conn.commit()
+
 insert_players_from_draft(current_league)
 insert_players_from_finalrosters(current_league)
 insert_playerseason_players(current_league,previous_league)
@@ -289,6 +316,13 @@ manager_power_rankings_df = manager_power_rankings.manager_power_rankings(
     league=current_league,
     output_dir=RESULTS_DIR,
 )
+
+nba_schedule_df = nba_schedule.build_nba_schedule(
+    current_league, season_year=current_year
+)
+if not nba_schedule_df.empty:
+    insert_nba_schedule(cursor, nba_schedule_df)
+    nba_schedule_df.to_csv(RESULTS_DIR / "nba_schedule.csv", index=False)
 
 alert_from = os.environ.get("ALERT_EMAIL_FROM")
 alert_to = os.environ.get("ALERT_EMAIL_TO")
