@@ -1,0 +1,111 @@
+season_year,week,home_team_id,home_team,home_score,away_team_id,away_team,away_score,winner,loser,winner_team_id,loser_team_id,margin
+2026,1,4,SKAVALASSKKYYYY,1215.0,8,Hawk Tuah Demure,933.0,SKAVALASSKKYYYY,Hawk Tuah Demure,4,8,282.0
+2026,1,5,Poole Party,953.0,3,Kat's Kittens,1065.0,Kat's Kittens,Poole Party,3,5,112.0
+2026,1,10,Van Der Linde Gang,1361.0,2,Phantom Troupe,1082.0,Van Der Linde Gang,Phantom Troupe,10,2,279.0
+2026,1,7,Goat's,1147.0,1,YSK FC,1023.0,Goat's,YSK FC,7,1,124.0
+2026,1,9,ybgcorp,857.0,6,Jeremy Lin fan club,1093.0,Jeremy Lin fan club,ybgcorp,6,9,236.0
+2026,2,8,Hawk Tuah Demure,1522.0,3,Kat's Kittens,1285.0,Hawk Tuah Demure,Kat's Kittens,8,3,237.0
+2026,2,2,Phantom Troupe,1271.0,4,SKAVALASSKKYYYY,1255.0,Phantom Troupe,SKAVALASSKKYYYY,2,4,16.0
+2026,2,1,YSK FC,1519.0,5,Poole Party,1243.0,YSK FC,Poole Party,1,5,276.0
+2026,2,6,Jeremy Lin fan club,1548.0,10,Van Der Linde Gang,1453.0,Jeremy Lin fan club,Van Der Linde Gang,6,10,95.0
+2026,2,9,ybgcorp,1364.0,7,Goat's,1339.0,ybgcorp,Goat's,9,7,25.0
+2026,3,2,Phantom Troupe,1293.0,8,Hawk Tuah Demure,1675.0,Hawk Tuah Demure,Phantom Troupe,8,2,382.0
+2026,3,3,Kat's Kittens,1374.0,1,YSK FC,1733.0,YSK FC,Kat's Kittens,1,3,359.0
+2026,3,4,SKAVALASSKKYYYY,1368.0,6,Jeremy Lin fan club,1351.0,SKAVALASSKKYYYY,Jeremy Lin fan club,4,6,17.0
+2026,3,5,Poole Party,1217.0,9,ybgcorp,992.0,Poole Party,ybgcorp,5,9,225.0
+2026,3,10,Van Der Linde Gang,1246.0,7,Goat's,1222.0,Van Der Linde Gang,Goat's,10,7,24.0
+2026,4,8,Hawk Tuah Demure,1400.0,1,YSK FC,1372.0,Hawk Tuah Demure,YSK FC,8,1,28.0
+2026,4,6,Jeremy Lin fan club,1361.0,2,Phantom Troupe,1052.0,Jeremy Lin fan club,Phantom Troupe,6,2,309.0
+2026,4,9,ybgcorp,1241.0,3,Kat's Kittens,1097.0,ybgcorp,Kat's Kittens,9,3,144.0
+2026,4,7,Goat's,1303.0,4,SKAVALASSKKYYYY,1555.0,SKAVALASSKKYYYY,Goat's,4,7,252.0
+2026,4,10,Van Der Linde Gang,1671.0,5,Poole Party,1310.0,Van Der Linde Gang,Poole Party,10,5,361.0
+2026,5,6,Jeremy Lin fan club,1475.0,8,Hawk Tuah Demure,1490.0,Hawk Tuah Demure,Jeremy Lin fan club,8,6,15.0
+2026,5,1,YSK FC,1329.0,9,ybgcorp,1451.0,ybgcorp,YSK FC,9,1,122.0
+2026,5,2,Phantom Troupe,1263.0,7,Goat's,1315.0,Goat's,Phantom Troupe,7,2,52.0
+2026,5,3,Kat's Kittens,1085.0,10,Van Der Linde Gang,1403.0,Van Der Linde Gang,Kat's Kittens,10,3,318.0
+2026,5,4,SKAVALASSKKYYYY,1376.0,5,Poole Party,1157.0,SKAVALASSKKYYYY,Poole Party,4,5,219.0
+2026,6,8,Hawk Tuah Demure,1498.0,9,ybgcorp,1286.0,Hawk Tuah Demure,ybgcorp,8,9,212.0
+2026,6,7,Goat's,1152.0,6,Jeremy Lin fan club,1250.0,Jeremy Lin fan club,Goat's,6,7,98.0
+2026,6,10,Van Der Linde Gang,1103.0,1,YSK FC,1341.0,YSK FC,Van Der Linde Gang,1,10,238.0
+2026,6,5,Poole Party,1153.0,2,Phantom Troupe,1311.0,Phantom Troupe,Poole Party,2,5,158.0
+2026,6,4,SKAVALASSKKYYYY,1423.0,3,Kat's Kittens,1057.0,SKAVALASSKKYYYY,Kat's Kittens,4,3,366.0
+2026,7,7,Goat's,1664.0,8,Hawk Tuah Demure,1787.0,Hawk Tuah Demure,Goat's,8,7,123.0
+2026,7,9,ybgcorp,1255.0,10,Van Der Linde Gang,1260.0,Van Der Linde Gang,ybgcorp,10,9,5.0
+2026,7,6,Jeremy Lin fan club,1381.0,5,Poole Party,1201.0,Jeremy Lin fan club,Poole Party,6,5,180.0
+2026,7,1,YSK FC,1365.0,4,SKAVALASSKKYYYY,1233.0,YSK FC,SKAVALASSKKYYYY,1,4,132.0
+2026,7,2,Phantom Troupe,1085.0,3,Kat's Kittens,1387.0,Kat's Kittens,Phantom Troupe,3,2,302.0
+2026,8,8,Hawk Tuah Demure,1009.0,10,Van Der Linde Gang,656.0,Hawk Tuah Demure,Van Der Linde Gang,8,10,353.0
+2026,8,5,Poole Party,671.0,7,Goat's,733.0,Goat's,Poole Party,7,5,62.0
+2026,8,4,SKAVALASSKKYYYY,707.0,9,ybgcorp,811.0,ybgcorp,SKAVALASSKKYYYY,9,4,104.0
+2026,8,3,Kat's Kittens,850.0,6,Jeremy Lin fan club,975.0,Jeremy Lin fan club,Kat's Kittens,6,3,125.0
+2026,8,2,Phantom Troupe,788.0,1,YSK FC,807.0,YSK FC,Phantom Troupe,1,2,19.0
+2026,9,5,Poole Party,906.0,8,Hawk Tuah Demure,1122.0,Hawk Tuah Demure,Poole Party,8,5,216.0
+2026,9,10,Van Der Linde Gang,1255.0,4,SKAVALASSKKYYYY,1130.0,Van Der Linde Gang,SKAVALASSKKYYYY,10,4,125.0
+2026,9,7,Goat's,1113.0,3,Kat's Kittens,907.0,Goat's,Kat's Kittens,7,3,206.0
+2026,9,9,ybgcorp,1080.0,2,Phantom Troupe,1193.0,Phantom Troupe,ybgcorp,2,9,113.0
+2026,9,6,Jeremy Lin fan club,1084.0,1,YSK FC,1410.0,YSK FC,Jeremy Lin fan club,1,6,326.0
+2026,10,8,Hawk Tuah Demure,1705.0,4,SKAVALASSKKYYYY,1387.0,Hawk Tuah Demure,SKAVALASSKKYYYY,8,4,318.0
+2026,10,3,Kat's Kittens,1322.0,5,Poole Party,1185.0,Kat's Kittens,Poole Party,3,5,137.0
+2026,10,2,Phantom Troupe,1223.0,10,Van Der Linde Gang,1286.0,Van Der Linde Gang,Phantom Troupe,10,2,63.0
+2026,10,1,YSK FC,1520.0,7,Goat's,1334.0,YSK FC,Goat's,1,7,186.0
+2026,10,6,Jeremy Lin fan club,1168.0,9,ybgcorp,1320.0,ybgcorp,Jeremy Lin fan club,9,6,152.0
+2026,11,3,Kat's Kittens,1347.0,8,Hawk Tuah Demure,1564.0,Hawk Tuah Demure,Kat's Kittens,8,3,217.0
+2026,11,4,SKAVALASSKKYYYY,1409.0,2,Phantom Troupe,1419.0,Phantom Troupe,SKAVALASSKKYYYY,2,4,10.0
+2026,11,5,Poole Party,1602.0,1,YSK FC,1581.0,Poole Party,YSK FC,5,1,21.0
+2026,11,10,Van Der Linde Gang,1447.0,6,Jeremy Lin fan club,1569.0,Jeremy Lin fan club,Van Der Linde Gang,6,10,122.0
+2026,11,7,Goat's,1578.0,9,ybgcorp,1614.0,ybgcorp,Goat's,9,7,36.0
+2026,12,8,Hawk Tuah Demure,1483.0,2,Phantom Troupe,1199.0,Hawk Tuah Demure,Phantom Troupe,8,2,284.0
+2026,12,1,YSK FC,1489.0,3,Kat's Kittens,1349.0,YSK FC,Kat's Kittens,1,3,140.0
+2026,12,6,Jeremy Lin fan club,1693.0,4,SKAVALASSKKYYYY,1405.0,Jeremy Lin fan club,SKAVALASSKKYYYY,6,4,288.0
+2026,12,9,ybgcorp,1569.0,5,Poole Party,1362.0,ybgcorp,Poole Party,9,5,207.0
+2026,12,7,Goat's,1496.0,10,Van Der Linde Gang,1232.0,Goat's,Van Der Linde Gang,7,10,264.0
+2026,13,1,YSK FC,1396.0,8,Hawk Tuah Demure,1374.0,YSK FC,Hawk Tuah Demure,1,8,22.0
+2026,13,2,Phantom Troupe,1217.0,6,Jeremy Lin fan club,1443.0,Jeremy Lin fan club,Phantom Troupe,6,2,226.0
+2026,13,3,Kat's Kittens,1362.0,9,ybgcorp,1170.0,Kat's Kittens,ybgcorp,3,9,192.0
+2026,13,4,SKAVALASSKKYYYY,1122.0,7,Goat's,1569.0,Goat's,SKAVALASSKKYYYY,7,4,447.0
+2026,13,5,Poole Party,1178.0,10,Van Der Linde Gang,1080.0,Poole Party,Van Der Linde Gang,5,10,98.0
+2026,14,8,Hawk Tuah Demure,1149.0,6,Jeremy Lin fan club,1109.0,Hawk Tuah Demure,Jeremy Lin fan club,8,6,40.0
+2026,14,9,ybgcorp,1190.0,1,YSK FC,1601.0,YSK FC,ybgcorp,1,9,411.0
+2026,14,7,Goat's,1504.0,2,Phantom Troupe,1332.0,Goat's,Phantom Troupe,7,2,172.0
+2026,14,10,Van Der Linde Gang,1367.0,3,Kat's Kittens,1433.0,Kat's Kittens,Van Der Linde Gang,3,10,66.0
+2026,14,5,Poole Party,1457.0,4,SKAVALASSKKYYYY,1562.0,SKAVALASSKKYYYY,Poole Party,4,5,105.0
+2026,15,9,ybgcorp,1800.0,8,Hawk Tuah Demure,1258.0,ybgcorp,Hawk Tuah Demure,9,8,542.0
+2026,15,6,Jeremy Lin fan club,1385.0,7,Goat's,1505.0,Goat's,Jeremy Lin fan club,7,6,120.0
+2026,15,1,YSK FC,1489.0,10,Van Der Linde Gang,1287.0,YSK FC,Van Der Linde Gang,1,10,202.0
+2026,15,2,Phantom Troupe,1720.0,5,Poole Party,1338.0,Phantom Troupe,Poole Party,2,5,382.0
+2026,15,3,Kat's Kittens,1622.0,4,SKAVALASSKKYYYY,1443.0,Kat's Kittens,SKAVALASSKKYYYY,3,4,179.0
+2026,16,8,Hawk Tuah Demure,1052.0,7,Goat's,1260.0,Goat's,Hawk Tuah Demure,7,8,208.0
+2026,16,10,Van Der Linde Gang,1198.0,9,ybgcorp,1381.0,ybgcorp,Van Der Linde Gang,9,10,183.0
+2026,16,5,Poole Party,947.0,6,Jeremy Lin fan club,1120.0,Jeremy Lin fan club,Poole Party,6,5,173.0
+2026,16,4,SKAVALASSKKYYYY,943.0,1,YSK FC,1413.0,YSK FC,SKAVALASSKKYYYY,1,4,470.0
+2026,16,3,Kat's Kittens,1144.0,2,Phantom Troupe,1160.0,Phantom Troupe,Kat's Kittens,2,3,16.0
+2026,17,10,Van Der Linde Gang,1179.0,8,Hawk Tuah Demure,1612.0,Hawk Tuah Demure,Van Der Linde Gang,8,10,433.0
+2026,17,7,Goat's,1555.0,5,Poole Party,1285.0,Goat's,Poole Party,7,5,270.0
+2026,17,9,ybgcorp,1767.0,4,SKAVALASSKKYYYY,1420.0,ybgcorp,SKAVALASSKKYYYY,9,4,347.0
+2026,17,6,Jeremy Lin fan club,1648.0,3,Kat's Kittens,1792.0,Kat's Kittens,Jeremy Lin fan club,3,6,144.0
+2026,17,1,YSK FC,1395.0,2,Phantom Troupe,1670.0,Phantom Troupe,YSK FC,2,1,275.0
+2026,18,8,Hawk Tuah Demure,1096.0,5,Poole Party,1060.0,Hawk Tuah Demure,Poole Party,8,5,36.0
+2026,18,4,SKAVALASSKKYYYY,1110.0,10,Van Der Linde Gang,1050.0,SKAVALASSKKYYYY,Van Der Linde Gang,4,10,60.0
+2026,18,3,Kat's Kittens,1446.0,7,Goat's,1340.0,Kat's Kittens,Goat's,3,7,106.0
+2026,18,2,Phantom Troupe,1434.0,9,ybgcorp,1091.0,Phantom Troupe,ybgcorp,2,9,343.0
+2026,18,1,YSK FC,1427.0,6,Jeremy Lin fan club,1176.0,YSK FC,Jeremy Lin fan club,1,6,251.0
+2026,19,4,SKAVALASSKKYYYY,1236.0,8,Hawk Tuah Demure,1212.0,SKAVALASSKKYYYY,Hawk Tuah Demure,4,8,24.0
+2026,19,5,Poole Party,1278.0,3,Kat's Kittens,1337.0,Kat's Kittens,Poole Party,3,5,59.0
+2026,19,10,Van Der Linde Gang,1391.0,2,Phantom Troupe,1104.0,Van Der Linde Gang,Phantom Troupe,10,2,287.0
+2026,19,7,Goat's,1587.0,1,YSK FC,1013.0,Goat's,YSK FC,7,1,574.0
+2026,19,9,ybgcorp,1135.0,6,Jeremy Lin fan club,1381.0,Jeremy Lin fan club,ybgcorp,6,9,246.0
+2026,20,8,Hawk Tuah Demure,1601.0,3,Kat's Kittens,1538.0,Hawk Tuah Demure,Kat's Kittens,8,3,63.0
+2026,20,2,Phantom Troupe,1566.0,4,SKAVALASSKKYYYY,1353.0,Phantom Troupe,SKAVALASSKKYYYY,2,4,213.0
+2026,20,1,YSK FC,1032.0,5,Poole Party,1144.0,Poole Party,YSK FC,5,1,112.0
+2026,20,6,Jeremy Lin fan club,1137.0,10,Van Der Linde Gang,1014.0,Jeremy Lin fan club,Van Der Linde Gang,6,10,123.0
+2026,20,9,ybgcorp,1364.0,7,Goat's,1478.0,Goat's,ybgcorp,7,9,114.0
+2026,21,8,Hawk Tuah Demure,3067.0,6,Jeremy Lin fan club,2933.0,Hawk Tuah Demure,Jeremy Lin fan club,8,6,134.0
+2026,21,1,YSK FC,2819.0,7,Goat's,2583.0,YSK FC,Goat's,1,7,236.0
+2026,21,9,ybgcorp,2438.0,3,Kat's Kittens,1246.0,ybgcorp,Kat's Kittens,9,3,1192.0
+2026,21,2,Phantom Troupe,2740.0,4,SKAVALASSKKYYYY,3359.0,SKAVALASSKKYYYY,Phantom Troupe,4,2,619.0
+2026,21,10,Van Der Linde Gang,2467.0,5,Poole Party,2052.0,Van Der Linde Gang,Poole Party,10,5,415.0
+2026,22,8,Hawk Tuah Demure,2807.0,1,YSK FC,2163.0,Hawk Tuah Demure,YSK FC,8,1,644.0
+2026,22,7,Goat's,2148.0,6,Jeremy Lin fan club,2763.0,Jeremy Lin fan club,Goat's,6,7,615.0
+2026,22,9,ybgcorp,1637.0,4,SKAVALASSKKYYYY,1974.0,SKAVALASSKKYYYY,ybgcorp,4,9,337.0
+2026,22,3,Kat's Kittens,1315.0,10,Van Der Linde Gang,2438.0,Van Der Linde Gang,Kat's Kittens,10,3,1123.0
+2026,22,2,Phantom Troupe,2698.0,5,Poole Party,1196.0,Phantom Troupe,Poole Party,2,5,1502.0

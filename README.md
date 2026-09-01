@@ -85,14 +85,89 @@ Key fields:
 
 The breakout workflow uses `cache.py` to look up previous-season player rows from the database first. If a player is missing from the database and a previous ESPN league object is available, the cache can fall back to previous-season free agents by position and convert ESPN player objects into dictionary rows.
 
-### Matchup and Weekly Player Builders
+### Matchup Analysis
 
-The project also includes helper builders for weekly data:
+`features/build_matchups.py` builds one row per matchup per week from ESPN box scores, for weeks `1` through `22`.
 
-- `features/build_matchups.py`: builds matchup rows from ESPN box scores.
-- `features/build_players_weekly.py`: builds weekly player lineup rows from ESPN box scores.
+Outputs:
 
-`main.py` currently builds matchups for weeks `1` through `22`, though this output is not written to CSV yet.
+- `reports/matchups.csv`
+- `matchups` MySQL table (upserted each run, keyed on `season_year`, `week`, `home_team_id`, `away_team_id`)
+
+Key fields:
+
+- `winner_team_id` / `loser_team_id`: `NULL` on a tie.
+- `margin`: absolute point difference between the two teams.
+
+### Biggest Upset Analysis
+
+`features/biggest_upset.py` finds matchups where a team won despite having a lower season average score than its opponent, using each team's average from weeks played *before* that matchup only (not full-season, so a blowout can't inflate its own baseline).
+
+Output:
+
+- `reports/biggest_upsets.csv`
+
+Key fields:
+
+- `winner_season_avg_entering_week` / `loser_season_avg_entering_week`: each team's average score from prior weeks only.
+- `avg_gap`: `loser_season_avg_entering_week - winner_season_avg_entering_week` — how the report is ranked, biggest gap first.
+
+A team's first matchup of the season has no prior average and is excluded, as are ties.
+
+### Weekly Player Builder
+
+`features/build_players_weekly.py` builds weekly player lineup rows (points, lineup slot, started/benched, injury status) from ESPN box scores. `main.py` runs it for weeks `1` through the league's current matchup period and writes `reports/players_weekly.csv`. It also feeds the lineup-efficiency and power-rankings features.
+
+### Lineup Efficiency
+
+`features/lineup_efficiency.py` measures how well each manager set their lineup: actual started points vs. the best legal lineup they could have started from the same rostered players that week.
+
+Outputs:
+
+- `reports/lineup_efficiency.csv` (one row per team per season)
+- `reports/lineup_efficiency_weekly.csv` (one row per team per week)
+
+For each team-week, the optimal lineup is a max-weight assignment of rostered players to that week's starting slots (`scipy.optimize.linear_sum_assignment`), respecting each player's `eligible_slots`. Players who were `OUT` (or injured and suspended) are excluded from the optimal lineup, since the manager couldn't have started them. `IR`-slot players are excluded from the starting pool.
+
+Key fields:
+
+- `avg_weekly_efficiency`: mean of weekly `actual / optimal`.
+- `total_points_left_on_bench`: season sum of `optimal - actual`.
+- `management_misses`: weeks a benched, playable player outscored a starter they were eligible to replace.
+- `worst_week` / `worst_week_points_left`: the single week with the most points left on the bench.
+
+### Manager Power Rankings
+
+`features/manager_power_rankings.py` ranks managers by a composite z-score, not just their record.
+
+Output:
+
+- `reports/manager_power_rankings.csv`
+
+The core input is **all-play win %** — each week, a team's score is ranked against every other team's score that week, not just its scheduled opponent, which removes head-to-head schedule luck. The composite is:
+
+```
+power_score = 0.40 * z(all_play_win_pct)
+            + 0.25 * z(points_for_per_week)
+            + 0.15 * z(actual_win_pct)
+            + 0.10 * z(avg_weekly_efficiency)
+            + 0.10 * z(recent_form)          # last 3 weeks all-play
+```
+
+If lineup efficiency is unavailable, its weight is redistributed across the other terms.
+
+Key fields:
+
+- `all_play_win_pct` / `actual_win_pct`
+- `luck`: `actual_win_pct - all_play_win_pct` (positive = lucky).
+- `recent_form`: last-3-weeks all-play win %.
+- `standing`: current ESPN standings position, for comparison.
+
+### Weekly Email Digest
+
+`features/build_digest.py` builds a short text summary of the latest run — closest matchup, biggest blowout, upset of the week, top riser, and best draft value pick — and, if `alerts/send_email.py` sends it via Gmail SMTP.
+
+The digest is sent automatically at the end of `main.py` when `ALERT_EMAIL_FROM`, `ALERT_EMAIL_TO`, and `ALERT_EMAIL_APP_PASSWORD` are set in `.env`. If any of these are missing, `main.py` skips the email and continues (the digest step never blocks the rest of the run).
 
 ## Generated Files
 
@@ -108,6 +183,12 @@ The project also includes helper builders for weekly data:
 - `reports/projection_analysis.csv`
 - `reports/roster_points_comparison.csv`
 - `reports/breakout_players.csv`
+- `reports/matchups.csv`
+- `reports/biggest_upsets.csv`
+- `reports/players_weekly.csv`
+- `reports/lineup_efficiency.csv`
+- `reports/lineup_efficiency_weekly.csv`
+- `reports/manager_power_rankings.csv`
 
 ## Setup
 
@@ -130,7 +211,12 @@ DB_PORT=3306
 DB_NAME=fantasy_basketball
 DB_USER=root
 DB_PASSWORD=your_password
+ALERT_EMAIL_FROM=your_gmail_address@gmail.com
+ALERT_EMAIL_TO=your_gmail_address@gmail.com
+ALERT_EMAIL_APP_PASSWORD=your_gmail_app_password
 ```
+
+`ALERT_EMAIL_*` are optional — omit them to skip the weekly email digest. `ALERT_EMAIL_APP_PASSWORD` must be a Gmail [App Password](https://support.google.com/accounts/answer/185833), not your regular account password.
 
 The script expects a MySQL database with tables for:
 
@@ -139,6 +225,23 @@ The script expects a MySQL database with tables for:
 - `draft_picks`
 - `player_season`
 - `final_rosters`
+- `matchups`
+
+Create the `matchups` table with:
+
+```sql
+CREATE TABLE matchups (
+    season_year INT NOT NULL,
+    week INT NOT NULL,
+    home_team_id INT NOT NULL,
+    away_team_id INT NOT NULL,
+    home_score FLOAT,
+    away_score FLOAT,
+    PRIMARY KEY (season_year, week, home_team_id, away_team_id)
+);
+```
+
+`winner_team_id` and `margin` are not stored in the database — they're derived in-memory each run (in `features/build_matchups.py`) for the CSV report, the email digest, and `features/biggest_upset.py`, since they're always cheap to recompute from `home_score`/`away_score`.
 
 ## Run
 
@@ -147,6 +250,26 @@ venv/bin/python main.py
 ```
 
 After a successful run, check `data/` for source snapshots and `reports/` for analysis outputs.
+
+### Weekly scheduling (macOS `launchd`)
+
+Since MySQL runs locally, this project schedules `main.py` with `launchd` rather than a cloud CI cron (GitHub Actions runners can't reach `localhost`).
+
+1. `scripts/run_main.sh` runs `main.py` with the venv's Python and logs output to `logs/main.log`.
+2. `com.fantasybball-analysis.weekly.plist` is a `launchd` agent template that calls the script weekly (Sunday nights by default). Copy it into `~/Library/LaunchAgents/` and edit the `<string>` paths to match your local repo location before loading it:
+
+```bash
+cp com.fantasybball-analysis.weekly.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.fantasybball-analysis.weekly.plist
+```
+
+To stop it:
+
+```bash
+launchctl unload ~/Library/LaunchAgents/com.fantasybball-analysis.weekly.plist
+```
+
+Note that `launchd` only runs the job if your Mac is on and awake at the scheduled time — it does not run in the cloud.
 
 ## Tests
 

@@ -6,3 +6,4 @@ __pycache__/
 /players.csv
 /draft.csv
 /draft_analysis.csv
+/logs/
