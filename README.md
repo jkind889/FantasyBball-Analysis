@@ -116,7 +116,52 @@ A team's first matchup of the season has no prior average and is excluded, as ar
 
 ### Weekly Player Builder
 
-`features/build_players_weekly.py` builds weekly player lineup rows (points, lineup slot, started/benched, injury status) from ESPN box scores. It is available for other features to use but is not yet wired into `main.py`'s output.
+`features/build_players_weekly.py` builds weekly player lineup rows (points, lineup slot, started/benched, injury status) from ESPN box scores. `main.py` runs it for weeks `1` through the league's current matchup period and writes `reports/players_weekly.csv`. It also feeds the lineup-efficiency and power-rankings features.
+
+### Lineup Efficiency
+
+`features/lineup_efficiency.py` measures how well each manager set their lineup: actual started points vs. the best legal lineup they could have started from the same rostered players that week.
+
+Outputs:
+
+- `reports/lineup_efficiency.csv` (one row per team per season)
+- `reports/lineup_efficiency_weekly.csv` (one row per team per week)
+
+For each team-week, the optimal lineup is a max-weight assignment of rostered players to that week's starting slots (`scipy.optimize.linear_sum_assignment`), respecting each player's `eligible_slots`. Players who were `OUT` (or injured and suspended) are excluded from the optimal lineup, since the manager couldn't have started them. `IR`-slot players are excluded from the starting pool.
+
+Key fields:
+
+- `avg_weekly_efficiency`: mean of weekly `actual / optimal`.
+- `total_points_left_on_bench`: season sum of `optimal - actual`.
+- `management_misses`: weeks a benched, playable player outscored a starter they were eligible to replace.
+- `worst_week` / `worst_week_points_left`: the single week with the most points left on the bench.
+
+### Manager Power Rankings
+
+`features/manager_power_rankings.py` ranks managers by a composite z-score, not just their record.
+
+Output:
+
+- `reports/manager_power_rankings.csv`
+
+The core input is **all-play win %** — each week, a team's score is ranked against every other team's score that week, not just its scheduled opponent, which removes head-to-head schedule luck. The composite is:
+
+```
+power_score = 0.40 * z(all_play_win_pct)
+            + 0.25 * z(points_for_per_week)
+            + 0.15 * z(actual_win_pct)
+            + 0.10 * z(avg_weekly_efficiency)
+            + 0.10 * z(recent_form)          # last 3 weeks all-play
+```
+
+If lineup efficiency is unavailable, its weight is redistributed across the other terms.
+
+Key fields:
+
+- `all_play_win_pct` / `actual_win_pct`
+- `luck`: `actual_win_pct - all_play_win_pct` (positive = lucky).
+- `recent_form`: last-3-weeks all-play win %.
+- `standing`: current ESPN standings position, for comparison.
 
 ### Weekly Email Digest
 
@@ -140,6 +185,10 @@ The digest is sent automatically at the end of `main.py` when `ALERT_EMAIL_FROM`
 - `reports/breakout_players.csv`
 - `reports/matchups.csv`
 - `reports/biggest_upsets.csv`
+- `reports/players_weekly.csv`
+- `reports/lineup_efficiency.csv`
+- `reports/lineup_efficiency_weekly.csv`
+- `reports/manager_power_rankings.csv`
 
 ## Setup
 

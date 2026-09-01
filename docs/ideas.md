@@ -8,18 +8,15 @@ Backlog of scaling ideas and new features, captured 2026-08-27, updated 2026-08-
 - **Alerts / digest** — `features/build_digest.py` + `alerts/send_email.py` send a weekly email digest (closest matchup, blowout, upset of the week, top riser, best draft value) from `main.py`, gated on `ALERT_EMAIL_*` env vars.
 - **Automate the run** — weekly `launchd` scheduling via `scripts/run_main.sh` + `com.fantasybball-analysis.weekly.plist` (GitHub Actions was ruled out — the MySQL DB is local-only and unreachable from a hosted runner).
 - **Finish `features/biggest_upset.py`** — an upset is a win despite a lower season-average score, computed from weeks played *before* that matchup only, ranked by average-score gap. Outputs `reports/biggest_upsets.csv` and feeds an "Upset of the week" line into the email digest.
-
-## Low effort, uses what's already built
-
-- **Wire up weekly players output** — `features/build_players_weekly.py` exists and is fully built but is never called from `main.py`. Same treatment: CSV/DB output.
-- **Manager power rankings** — combine weekly wins, points-for/against, and roster efficiency (started vs. bench points) from `players_weekly` into a single ranking report. Note: `Team` objects from `espn-api` already expose `points_for`/`points_against`/`standing`/`final_standing` directly, so a power-rankings report may not even need to hand-sum from `matchups`.
+- **Wire up weekly players output** — `build_players_weekly` now runs in `main.py` (weeks 1..current matchup period) and writes `reports/players_weekly.csv`.
+- **Lineup efficiency** — `features/lineup_efficiency.py`: actual started points vs. best legal lineup (scipy assignment on `eligible_slots`), known-OUT players excluded. Outputs `reports/lineup_efficiency.csv` + `_weekly.csv`. Spec: `docs/lineup_efficiency_and_power_rankings.md`.
+- **Manager power rankings** — `features/manager_power_rankings.py`: composite z-score of all-play win%, points-for, actual win%, lineup efficiency, recent form. Outputs `reports/manager_power_rankings.csv`. Spec: `docs/lineup_efficiency_and_power_rankings.md`.
 
 ## Medium — new analysis features (same pattern as existing `features/*.py`)
 
 - **Best/worst waiver pickups** — compare a player's points-per-game before/after being added off waivers vs. while rostered elsewhere. Data source confirmed: `League.recent_activity(size=25, msg_type='FA'|'WAVIER'|'TRADED')` (requires auth, already have `espn_s2`/`swid`) returns `Activity` objects — `date` (epoch ms) + `actions`: list of `(team, action, player, bid_amount)` tuples.
 - **Trade analyzer** — same `recent_activity(msg_type='TRADED')` feed as above; evaluate trade value similarly to draft value (points gained/lost vs. expectation per player involved).
 - **Positional scarcity / draft strategy report** — expected points by position and round, to see which positions get drafted too early/late league-wide.
-- **Lineup efficiency** — % of available points left on the bench per team per week, using the `was_started` field already tracked in `build_players_weekly`.
 - **Injury impact tracking** — using `injury_status`/`injured` fields already pulled, quantify points lost to injury per team.
 - **Roster-source tagging** — `Player.acquisitionType` (draft vs. FA vs. trade) is available from the API but not currently captured anywhere; would make roster-source filtering exact instead of inferred.
 

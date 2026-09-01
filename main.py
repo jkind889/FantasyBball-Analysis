@@ -11,6 +11,8 @@ import features.build_players_weekly as build_players_weekly
 import features.build_matchups as build_matchups
 import features.build_breakout_players as build_breakout_players
 import features.biggest_upset as biggest_upset
+import features.lineup_efficiency as lineup_efficiency
+import features.manager_power_rankings as manager_power_rankings
 import features.build_digest as build_digest
 from alerts.send_email import send_digest_email
 from database import get_connection
@@ -272,6 +274,21 @@ build_matchups_df = build_matchups.build_matchups(
 insert_matchups(cursor, build_matchups_df)
 build_matchups_df.to_csv(RESULTS_DIR / "matchups.csv", index=False)
 biggest_upsets_df = biggest_upset.biggest_upset(build_matchups_df, output_dir=RESULTS_DIR)
+
+last_week = int(getattr(current_league, "currentMatchupPeriod", 22) or 22)
+players_weekly_df = build_players_weekly.build_players_weekly(
+    current_league, 1, min(last_week, 22)
+)
+players_weekly_df.to_csv(RESULTS_DIR / "players_weekly.csv", index=False)
+lineup_efficiency_df = lineup_efficiency.lineup_efficiency(
+    players_weekly_df, season_year=current_year, output_dir=RESULTS_DIR
+)
+manager_power_rankings_df = manager_power_rankings.manager_power_rankings(
+    build_matchups_df,
+    lineup_efficiency_df=lineup_efficiency_df,
+    league=current_league,
+    output_dir=RESULTS_DIR,
+)
 
 alert_from = os.environ.get("ALERT_EMAIL_FROM")
 alert_to = os.environ.get("ALERT_EMAIL_TO")
