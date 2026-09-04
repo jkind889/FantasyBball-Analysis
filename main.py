@@ -20,6 +20,7 @@ import features.nba_schedule as nba_schedule
 import features.predictive_engine as predictive_engine
 import features.decision_modes as decision_modes
 from alerts.send_email import send_digest_email
+from cache import _fetch_free_agents
 from database import get_connection
 
 
@@ -99,8 +100,11 @@ cursor = conn.cursor()
 for team in current_league.teams:
     team_id = team.team_id
     team_name = team.team_name
-    owner = team.owners[0]
-    owner_name = f"{owner["firstName"]}" + " " + f"{owner["lastName"]}"
+    owner = team.owners[0] if team.owners else {}
+    owner_name = (
+        f"{owner.get('firstName', '')} {owner.get('lastName', '')}".strip()
+        or team_name
+    )
     season_year = current_year
 
     cursor.execute(
@@ -276,8 +280,8 @@ players_df = pd.read_sql(
         NULL AS pos_rank,
         ps.total_points,
         ps.avg_points,
-        0 AS projected_total_points,
-        0 AS projected_avg_points,
+        NULL AS projected_total_points,
+        NULL AS projected_avg_points,
         ps.games_played
     FROM final_rosters fr
     JOIN players p
@@ -294,6 +298,21 @@ players_df = pd.read_sql(
     conn,
     params=(current_year,),
 )
+
+# player_season doesn't store ESPN projections, so pull them straight off the
+# live roster objects instead of comparing against a hardcoded 0.
+_projected_total = {}
+_projected_avg = {}
+for team in current_league.teams:
+    for player in team.roster:
+        _projected_total[player.playerId] = getattr(
+            player, "projected_total_points", None
+        )
+        _projected_avg[player.playerId] = getattr(
+            player, "projected_avg_points", None
+        )
+players_df["projected_total_points"] = players_df["player_id"].map(_projected_total)
+players_df["projected_avg_points"] = players_df["player_id"].map(_projected_avg)
 
 draft_df = pd.read_sql(
     """
@@ -320,17 +339,31 @@ draft_df = pd.read_sql(
 
 players_df.to_csv(OUTPUT_DIR / "players.csv", index=False)
 draft_df.to_csv(OUTPUT_DIR / "draft.csv", index=False)
+
+# Fetch the current-season free agents once and share the lookup cache across
+# every feature that needs them.
+current_free_agents = _fetch_free_agents(current_league)
+shared_free_agent_cache = {}
+
+_current_matchup_period = getattr(current_league, "currentMatchupPeriod", None)
+last_week = min(
+    int(_current_matchup_period) if _current_matchup_period is not None else 22,
+    22,
+)
+
 draft_analysis_df = draft_analysis.draft_analysis(
     players_df,
     draft_df,
     league=current_league,
     output_dir=RESULTS_DIR,
+    free_agent_cache=shared_free_agent_cache,
 )
 projection_analysis_df = projection_analysis.projection_analysis(
     players_df,
     draft_df,
     league=current_league,
     output_dir=RESULTS_DIR,
+    free_agent_cache=shared_free_agent_cache,
 )
 roster_points_comparison_df = roster_points_comparison.roster_points_comparison(
     players_df,
@@ -342,18 +375,18 @@ breakout_players_df = build_breakout_players.build_breakout_players(
     previous_league,
     conn=conn,
     min_current_gp=MIN_GAMES_PLAYED,
+    current_free_agents=current_free_agents,
 )
 breakout_players_df.to_csv(RESULTS_DIR / "breakout_players.csv", index=False)
 build_matchups_df = build_matchups.build_matchups(
-    current_league, start_week=1, end_week=22, season_year=current_year
+    current_league, start_week=1, end_week=last_week, season_year=current_year
 )
 insert_matchups(cursor, build_matchups_df)
 build_matchups_df.to_csv(RESULTS_DIR / "matchups.csv", index=False)
 biggest_upsets_df = biggest_upset.biggest_upset(build_matchups_df, output_dir=RESULTS_DIR)
 
-last_week = int(getattr(current_league, "currentMatchupPeriod", 22) or 22)
 players_weekly_df = build_players_weekly.build_players_weekly(
-    current_league, 1, min(last_week, 22)
+    current_league, 1, last_week
 )
 players_weekly_df.to_csv(RESULTS_DIR / "players_weekly.csv", index=False)
 lineup_efficiency_df = lineup_efficiency.lineup_efficiency(

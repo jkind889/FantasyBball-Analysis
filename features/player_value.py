@@ -12,14 +12,14 @@ import pandas as pd
 # Starting-lineup template for a standard ESPN H2H points league. Keys are the
 # roster slots; values are how many of each start.
 DEFAULT_ROSTER_SLOTS = {
-    "PG": 1, "SG": 1, "SF": 1, "PF": 1, "C": 1, "G": 1, "F": 1, "UTIL": 3,
+    "PG": 1, "SG": 1, "SF": 1, "PF": 1, "C": 1, "G": 1, "F": 1, "UT": 3,
 }
 
 # Which primary positions satisfy each flex slot.
 _SLOT_ELIGIBILITY = {
     "PG": {"PG"}, "SG": {"SG"}, "SF": {"SF"}, "PF": {"PF"}, "C": {"C"},
     "G": {"PG", "SG"}, "F": {"SF", "PF"},
-    "UTIL": {"PG", "SG", "SF", "PF", "C"},
+    "UT": {"PG", "SG", "SF", "PF", "C"},
 }
 
 PRIMARY_POSITIONS = ("PG", "SG", "SF", "PF", "C")

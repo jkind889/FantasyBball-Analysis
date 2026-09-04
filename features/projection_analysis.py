@@ -23,7 +23,8 @@ OUTPUT_COLUMNS = [
 ]
 
 
-def projection_analysis(players_df, draft_df, league=None, output_dir=None):
+def projection_analysis(players_df, draft_df, league=None, output_dir=None,
+                        free_agent_cache=None):
     """Compare ESPN projected totals with actual totals for rostered players."""
     final_players = players_df.drop_duplicates("player_id", keep="last").rename(
         columns={
@@ -61,6 +62,7 @@ def projection_analysis(players_df, draft_df, league=None, output_dir=None):
         missing_player_stats = fetch_missing_draft_analysis_data(
             combined_df,
             league,
+            free_agent_cache=free_agent_cache,
         )
         combined_df = merge_missing_draft_analysis_data(
             combined_df,

@@ -15,7 +15,7 @@ Pure functions. ``build_nba_schedule`` accepts either a ``League`` or the raw
 See ``docs/predictive_engine.md``.
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 import pandas as pd
 
@@ -111,7 +111,9 @@ def build_nba_schedule(source, season_year=None, matchup_ids=None):
                 ts = game.get("date")
                 if ts is None:
                     continue
-                game_dt = datetime.fromtimestamp(ts / 1000.0).date()
+                game_dt = datetime.fromtimestamp(
+                    ts / 1000.0, tz=timezone.utc
+                ).date()
                 rows.append(
                     {
                         "season_year": season_year,

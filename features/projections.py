@@ -119,7 +119,14 @@ def project_rest_of_season(players_df, default_games_remaining=DEFAULT_SEASON_GA
     df = pd.concat([df, projected], axis=1)
 
     games_left = pd.to_numeric(df["games_remaining"], errors="coerce")
-    games_left = games_left.fillna(default_games_remaining).clip(lower=0)
+    # When some players have schedule-derived counts, an unmatched pro team is a
+    # data gap, not a preseason-length runway: fall back to the median of the
+    # known values so it can't top the board on a full-season projection.
+    if games_left.notna().any():
+        fallback = games_left.median()
+    else:
+        fallback = default_games_remaining
+    games_left = games_left.fillna(fallback).clip(lower=0)
     df["games_remaining"] = games_left.astype(int)
 
     df["ros_total"] = (df["proj_pts_per_game"] * df["games_remaining"]).round(1)

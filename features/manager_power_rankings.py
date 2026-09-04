@@ -77,6 +77,14 @@ def _zscore(series):
 def manager_power_rankings(
     matchups_df, lineup_efficiency_df=None, league=None, output_dir=None
 ):
+    if matchups_df is not None and not matchups_df.empty:
+        # Keep only weeks that were actually played; an unplayed matchup comes
+        # back 0-0 and would otherwise inflate games counts, drag win pct and
+        # all-play toward 0.5, and poison the recent-form window.
+        matchups_df = matchups_df[
+            ~((matchups_df["home_score"] == 0) & (matchups_df["away_score"] == 0))
+        ]
+
     if matchups_df is None or matchups_df.empty:
         result = pd.DataFrame(columns=OUTPUT_COLUMNS)
         if output_dir is not None:

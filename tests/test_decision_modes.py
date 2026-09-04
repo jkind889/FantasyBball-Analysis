@@ -96,13 +96,13 @@ class RecommendLineupTest(unittest.TestCase):
     def test_fills_best_slots_and_benches_the_rest(self):
         roster = [
             {"player_id": 1, "player_name": "PG-A", "position": "PG",
-             "pro_team": "ATL", "eligible_slots": ["PG", "G", "UTIL"],
+             "pro_team": "ATL", "eligible_slots": ["PG", "G", "UT"],
              "injury_status": "ACTIVE"},
             {"player_id": 2, "player_name": "PG-B", "position": "PG",
-             "pro_team": "ATL", "eligible_slots": ["PG", "G", "UTIL"],
+             "pro_team": "ATL", "eligible_slots": ["PG", "G", "UT"],
              "injury_status": "ACTIVE"},
             {"player_id": 3, "player_name": "OUT-guy", "position": "C",
-             "pro_team": "ATL", "eligible_slots": ["C", "UTIL"],
+             "pro_team": "ATL", "eligible_slots": ["C", "UT"],
              "injury_status": "OUT"},
         ]
         projections_df = pd.DataFrame([

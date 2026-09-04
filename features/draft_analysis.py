@@ -32,7 +32,8 @@ TEAM_SUMMARY_COLUMNS = [
 ]
 
 
-def draft_analysis(players_df, draft_df, league=None, output_dir=None):
+def draft_analysis(players_df, draft_df, league=None, output_dir=None,
+                   free_agent_cache=None):
     draft_analysis_df = draft_df.merge(
         players_df,
         on="player_id",
@@ -44,6 +45,7 @@ def draft_analysis(players_df, draft_df, league=None, output_dir=None):
         missing_player_stats = fetch_missing_draft_analysis_data(
             draft_analysis_df,
             league,
+            free_agent_cache=free_agent_cache,
         )
         draft_analysis_df = merge_missing_draft_analysis_data(
             draft_analysis_df,
@@ -229,14 +231,16 @@ def build_team_draft_summary(draft_analysis_df):
     return team_summary_df.reset_index(drop=True)
 
 
-def fetch_missing_draft_analysis_data(draft_analysis_df, league):
+def fetch_missing_draft_analysis_data(draft_analysis_df, league,
+                                     free_agent_cache=None):
     missing_players = draft_analysis_df[
         draft_analysis_df["total_points"].isna()
         | draft_analysis_df["games_played"].isna()
     ]
 
     player_rows = []
-    free_agent_cache = {}
+    if free_agent_cache is None:
+        free_agent_cache = {}
 
     for _, row in missing_players.iterrows():
         player_id = row["player_id"]
