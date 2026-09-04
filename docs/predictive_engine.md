@@ -73,15 +73,46 @@ Derives:
 - `games_per_week(schedule_df)` -> team x week grid — a 4-game week streamer is
   worth more than a better player on a 2-game week; the biggest in-season edge.
 
-### 4. Entry points (TODO)
+### 4. Entry points — `features/decision_modes.py` (done, first pass)
 
-Decisions happen off-cycle from the weekly retrospective run, so add modes:
+Decisions happen off-cycle from the weekly retrospective run, so `main.py`
+takes a `--mode`:
 
-- `python main.py --mode draft` — projected VORP board vs. ESPN ADP
-- `python main.py --mode waivers` — free agents ranked by ROS VORP and by
-  next-week value
-- `python main.py --mode startsit` — project the upcoming week, run the
-  `lineup_efficiency` assignment solver forward for a recommended lineup
+    python main.py                     # weekly: full retrospective + predictive run (default)
+    python main.py --mode draft
+    python main.py --mode waivers [--week N]
+    python main.py --mode startsit [--week N] [--team TEAM_ID]
+
+A decision mode skips all the retrospective work and the MySQL writes: it runs
+only the shared pipeline (`features/predictive_engine.run_projection_pipeline` —
+schedule -> games remaining -> ROS projection -> VORP), turns it into one table,
+prints the top 20, and writes a CSV. The scoring functions are pure DataFrame
+code with unit tests; `decision_modes.run()` is the only part that touches the
+`League` object.
+
+**`--mode draft` -> `reports/draft_board.csv`**
+The projected-VORP board for the whole player pool (every rostered player plus
+~500 free agents), ranked by `vorp_ros`. ESPN's own view rides alongside for
+comparison — `espn_proj_avg_points`, `replacement_pts_per_game`,
+`prior_avg_points` — so you can see where the projection disagrees with the
+crowd. (True ADP isn't exposed by `espn-api`; the free-agent pull is already
+ADP-sorted, and `espn_proj_avg_points` is the stand-in until ADP is scraped.)
+
+**`--mode waivers` -> `reports/waiver_board.csv`**
+Free agents only, with two rankings side by side:
+- `ros_rank` / `vorp_ros` — season-long value, for a roster spot you'll keep.
+- `next_week_rank` / `next_week_value` — `proj_pts_per_game x games in that
+  fantasy week` (from `games_per_week`), for a stream. A 4-game-week nobody can
+  outrank a 2-game-week starter here.
+`--week` picks the fantasy week (default: current).
+
+**`--mode startsit` -> `reports/start_sit.csv`**
+Projects every player on your roster for the target week
+(`proj_pts_per_game x games_this_week`), drops anyone `OUT`/suspended, then runs
+a `scipy.optimize.linear_sum_assignment` over the starting slots (`PG SG SF PF
+C G F UTIL UTIL UTIL`) against each player's ESPN `eligibleSlots`. Output is one
+row per player with `recommended_slot` (a slot name or `BENCH`), starters first.
+Needs your team id: `--team` or the `ESPN_TEAM_ID` env var.
 
 ## Downstream features (backlog, build on 1–3)
 

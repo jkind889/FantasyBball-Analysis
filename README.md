@@ -169,6 +169,31 @@ Key fields:
 
 The digest is sent automatically at the end of `main.py` when `ALERT_EMAIL_FROM`, `ALERT_EMAIL_TO`, and `ALERT_EMAIL_APP_PASSWORD` are set in `.env`. If any of these are missing, `main.py` skips the email and continues (the digest step never blocks the rest of the run).
 
+### Predictive Engine (rest-of-season projection -> player value)
+
+Points the same math forward to help *before* the draft and *during* the season. Every `main.py` run also produces:
+
+- `reports/projections.csv` — `features/projections.py` blends prior-season pace, current-season pace, and ESPN's projection into `proj_pts_per_game`, weighted by how many games a player has logged this season, then extends it over `games_remaining` (exact, from the NBA schedule) for a `ros_total`.
+- `reports/player_value.csv` — `features/player_value.py` turns those projections into `vorp_ros` (value over replacement): `proj_pts_per_game` minus the projected rate of the last startable player at the position, times games remaining. One number that ranks a draft board and a waiver list the same way.
+- `reports/nba_schedule.csv` + `nba_schedule` table — `features/nba_schedule.py` flattens ESPN's pro-team schedule to one row per team per game, and derives games remaining and a team-by-fantasy-week game grid.
+
+Full design: `docs/predictive_engine.md`.
+
+### Decision Modes
+
+`main.py --mode <mode>` runs a single forward-looking report instead of the full weekly pipeline. Decision modes skip the retrospective analysis and all MySQL writes — they only need ESPN and `scipy`.
+
+| Command | Output | What it answers |
+| --- | --- | --- |
+| `python main.py` (default) | all reports | the full weekly retrospective + predictive run |
+| `python main.py --mode draft` | `reports/draft_board.csv` | who has the most projected value — the whole pool (rosters + free agents) ranked by rest-of-season VORP, with ESPN's own projection alongside |
+| `python main.py --mode waivers [--week N]` | `reports/waiver_board.csv` | who to pick up — free agents ranked two ways: `ros_rank` (season-long value) and `next_week_rank` (`projection x games that fantasy week`, for streamers) |
+| `python main.py --mode startsit [--week N] [--team ID]` | `reports/start_sit.csv` | who to start — projects your roster for the week, drops `OUT` players, and solves the best legal lineup (`recommended_slot` per player) |
+
+`--mode startsit` needs your team id, from `--team` or the `ESPN_TEAM_ID` env var. `--week` defaults to the current fantasy week.
+
+The scoring logic lives in `features/decision_modes.py` (pure, unit-tested); the shared projection chain is `features/predictive_engine.py`.
+
 ## Generated Files
 
 ### `data/`
@@ -189,6 +214,12 @@ The digest is sent automatically at the end of `main.py` when `ALERT_EMAIL_FROM`
 - `reports/lineup_efficiency.csv`
 - `reports/lineup_efficiency_weekly.csv`
 - `reports/manager_power_rankings.csv`
+- `reports/projections.csv`
+- `reports/player_value.csv`
+- `reports/nba_schedule.csv`
+- `reports/draft_board.csv` (only from `--mode draft`)
+- `reports/waiver_board.csv` (only from `--mode waivers`)
+- `reports/start_sit.csv` (only from `--mode startsit`)
 
 ## Setup
 
@@ -214,9 +245,10 @@ DB_PASSWORD=your_password
 ALERT_EMAIL_FROM=your_gmail_address@gmail.com
 ALERT_EMAIL_TO=your_gmail_address@gmail.com
 ALERT_EMAIL_APP_PASSWORD=your_gmail_app_password
+ESPN_TEAM_ID=
 ```
 
-`ALERT_EMAIL_*` are optional — omit them to skip the weekly email digest. `ALERT_EMAIL_APP_PASSWORD` must be a Gmail [App Password](https://support.google.com/accounts/answer/185833), not your regular account password.
+`ESPN_TEAM_ID` is optional — only `python main.py --mode startsit` uses it (your team id in the league). `ALERT_EMAIL_*` are optional — omit them to skip the weekly email digest. `ALERT_EMAIL_APP_PASSWORD` must be a Gmail [App Password](https://support.google.com/accounts/answer/185833), not your regular account password.
 
 The script expects a MySQL database with tables for:
 
@@ -250,6 +282,16 @@ venv/bin/python main.py
 ```
 
 After a successful run, check `data/` for source snapshots and `reports/` for analysis outputs.
+
+For a single forward-looking report without the full pipeline:
+
+```bash
+venv/bin/python main.py --mode draft
+venv/bin/python main.py --mode waivers --week 5
+venv/bin/python main.py --mode startsit --team 3
+```
+
+See [Decision Modes](#decision-modes) above.
 
 ### Weekly scheduling (macOS `launchd`)
 

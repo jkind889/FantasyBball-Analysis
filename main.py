@@ -1,4 +1,6 @@
+import argparse
 import os
+import sys
 from pathlib import Path
 
 from espn_api.basketball import League
@@ -15,9 +17,8 @@ import features.lineup_efficiency as lineup_efficiency
 import features.manager_power_rankings as manager_power_rankings
 import features.build_digest as build_digest
 import features.nba_schedule as nba_schedule
-import features.projection_inputs as projection_inputs
-import features.projections as projections
-import features.player_value as player_value
+import features.predictive_engine as predictive_engine
+import features.decision_modes as decision_modes
 from alerts.send_email import send_digest_email
 from database import get_connection
 
@@ -26,8 +27,30 @@ MIN_GAMES_PLAYED = 41
 OUTPUT_DIR = Path("data")
 RESULTS_DIR = Path("reports")
 load_dotenv()
-conn = get_connection()
-cursor = conn.cursor()
+
+parser = argparse.ArgumentParser(description="FantasyBball-Analysis pipeline")
+parser.add_argument(
+    "--mode",
+    choices=("weekly",) + decision_modes.DECISION_MODES,
+    default="weekly",
+    help=(
+        "weekly (default): full retrospective + predictive run. "
+        "draft / waivers / startsit: a single forward-looking decision report."
+    ),
+)
+parser.add_argument(
+    "--week",
+    type=int,
+    default=None,
+    help="fantasy week for waivers/startsit (default: current week)",
+)
+parser.add_argument(
+    "--team",
+    type=int,
+    default=os.environ.get("ESPN_TEAM_ID"),
+    help="your team id for startsit (default: ESPN_TEAM_ID env var)",
+)
+args = parser.parse_args()
 
 current_year = int(os.environ["ESPN_YEAR"])
 
@@ -49,6 +72,29 @@ previous_league = League(
 OUTPUT_DIR.mkdir(exist_ok=True)
 RESULTS_DIR.mkdir(exist_ok=True)
 
+
+if args.mode in decision_modes.DECISION_MODES:
+    team_id = int(args.team) if args.team is not None else None
+    report_df = decision_modes.run(
+        args.mode,
+        current_league,
+        previous_league,
+        week=args.week,
+        team_id=team_id,
+        output_dir=RESULTS_DIR,
+    )
+    csv_name = {
+        "draft": "draft_board.csv",
+        "waivers": "waiver_board.csv",
+        "startsit": "start_sit.csv",
+    }[args.mode]
+    print(f"--mode {args.mode}: wrote reports/{csv_name} ({len(report_df)} rows)")
+    print(report_df.head(20).to_string(index=False))
+    sys.exit(0)
+
+
+conn = get_connection()
+cursor = conn.cursor()
 
 for team in current_league.teams:
     team_id = team.team_id
@@ -328,21 +374,14 @@ if not nba_schedule_df.empty:
     nba_schedule_df.to_csv(RESULTS_DIR / "nba_schedule.csv", index=False)
 
 # Predictive engine: rest-of-season projection -> player value (VORP).
-projection_inputs_df = projection_inputs.build_projection_inputs(
-    current_league, previous_league
-)
-if not nba_schedule_df.empty:
-    projection_inputs_df = nba_schedule.attach_games_remaining(
-        projection_inputs_df, nba_schedule_df
-    )
-ros_projections_df = projections.project_rest_of_season(
-    projection_inputs_df, output_dir=RESULTS_DIR
-)
-player_value_df = player_value.compute_player_value(
-    ros_projections_df,
-    league_size=len(current_league.teams),
+predictive = predictive_engine.run_projection_pipeline(
+    current_league,
+    previous_league,
+    schedule_df=nba_schedule_df,
     output_dir=RESULTS_DIR,
 )
+ros_projections_df = predictive["projections"]
+player_value_df = predictive["value"]
 
 alert_from = os.environ.get("ALERT_EMAIL_FROM")
 alert_to = os.environ.get("ALERT_EMAIL_TO")
