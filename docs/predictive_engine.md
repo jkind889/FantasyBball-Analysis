@@ -28,8 +28,14 @@ dominates (`STABILIZE_GP`, `MAX_CURRENT_WEIGHT`).
 Output: `proj_pts_per_game`, `games_remaining`, `ros_total`, plus `basis`
 (`preseason` / `blended` / `current`) and `current_weight` for transparency.
 
-`games_remaining` is an input for now (caller passes an estimate); it becomes
-exact once piece 3 lands.
+`games_remaining` is now supplied exactly by piece 3 in the `main.py` run
+(`nba_schedule.attach_games_remaining`), falling back to the season-length
+default only for players whose pro team can't be matched.
+
+Wired into `main.py`: `projection_inputs.build_projection_inputs(current_league,
+previous_league)` assembles the per-player input frame (current pace, prior-year
+pace, ESPN projection) from the `League` roster objects, then the schedule is
+attached and `project_rest_of_season` runs, writing `reports/projections.csv`.
 
 ### 2. Player value / VORP — `features/player_value.py` (done, first pass)
 
@@ -45,7 +51,9 @@ Position eligibility is parsed from the `position` string (`"PG/SG"` ->
 `{PG, SG, G, UTIL}`). Both a global and a per-position replacement level are
 produced so positional scarcity is visible.
 
-This single number ranks a draft board and a waiver list.
+This single number ranks a draft board and a waiver list. Wired into `main.py`
+after the projection step, `league_size` from the current league, writing
+`reports/player_value.csv`.
 
 ### 3. NBA schedule / games-remaining — `features/nba_schedule.py` (done, first pass)
 

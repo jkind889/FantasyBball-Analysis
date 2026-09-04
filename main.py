@@ -15,6 +15,9 @@ import features.lineup_efficiency as lineup_efficiency
 import features.manager_power_rankings as manager_power_rankings
 import features.build_digest as build_digest
 import features.nba_schedule as nba_schedule
+import features.projection_inputs as projection_inputs
+import features.projections as projections
+import features.player_value as player_value
 from alerts.send_email import send_digest_email
 from database import get_connection
 
@@ -323,6 +326,23 @@ nba_schedule_df = nba_schedule.build_nba_schedule(
 if not nba_schedule_df.empty:
     insert_nba_schedule(cursor, nba_schedule_df)
     nba_schedule_df.to_csv(RESULTS_DIR / "nba_schedule.csv", index=False)
+
+# Predictive engine: rest-of-season projection -> player value (VORP).
+projection_inputs_df = projection_inputs.build_projection_inputs(
+    current_league, previous_league
+)
+if not nba_schedule_df.empty:
+    projection_inputs_df = nba_schedule.attach_games_remaining(
+        projection_inputs_df, nba_schedule_df
+    )
+ros_projections_df = projections.project_rest_of_season(
+    projection_inputs_df, output_dir=RESULTS_DIR
+)
+player_value_df = player_value.compute_player_value(
+    ros_projections_df,
+    league_size=len(current_league.teams),
+    output_dir=RESULTS_DIR,
+)
 
 alert_from = os.environ.get("ALERT_EMAIL_FROM")
 alert_to = os.environ.get("ALERT_EMAIL_TO")
