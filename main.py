@@ -1,6 +1,8 @@
 import argparse
+import json
 import os
 import sys
+import warnings
 from pathlib import Path
 
 from espn_api.basketball import League
@@ -48,10 +50,99 @@ parser.add_argument(
 parser.add_argument(
     "--team",
     type=int,
-    default=os.environ.get("ESPN_TEAM_ID"),
-    help="your team id for startsit (default: ESPN_TEAM_ID env var)",
+    default=None,
+    help="your team id for startsit or the waiver advisor (default: ESPN_TEAM_ID)",
 )
+parser.add_argument("--recent-window", type=int, choices=(5, 6), default=None,
+                    help="recent appearances used by the waiver advisor")
+parser.add_argument("--protect", type=int, action="append", default=[], metavar="PLAYER_ID",
+                    help="protect a rostered player from waiver drops (repeatable)")
+parser.add_argument("--waiver-config", type=Path, help="JSON rule/player overrides for live waiver advice")
+parser.add_argument("--snapshot", type=Path, help="replay a saved waiver snapshot without ESPN or MySQL")
+parser.add_argument("--basic-waivers", action="store_true", help="use the original non-roster-aware waiver board")
+parser.add_argument("--historical-date", help="reconstruct a previous-season waiver demo at local midnight (YYYY-MM-DD)")
+parser.add_argument("--season", type=int, help="ESPN season ending year for a historical demo")
+parser.add_argument("--output-dir", type=Path, help="directory for waiver outputs (historical demos default to a separate folder)")
 args = parser.parse_args()
+
+if (args.snapshot or args.waiver_config or args.protect or args.basic_waivers or args.recent_window is not None or args.historical_date or args.season or args.output_dir) and args.mode != "waivers":
+    parser.error("Waiver options require --mode waivers")
+if args.basic_waivers and (args.snapshot or args.waiver_config or args.protect or args.recent_window is not None or args.historical_date):
+    parser.error("--basic-waivers cannot be combined with advisor options")
+if args.season is not None and not args.historical_date:
+    parser.error("--season requires --historical-date")
+if args.historical_date and (args.snapshot or args.waiver_config):
+    parser.error("--historical-date cannot be combined with --snapshot or --waiver-config")
+if args.output_dir:
+    RESULTS_DIR = args.output_dir
+if args.snapshot:
+    if args.waiver_config:
+        parser.error("Replay uses the rules stored in the snapshot; do not combine --snapshot and --waiver-config")
+    from features.waiver_advisor import advise_waivers, write_advice
+    try:
+        snapshot = json.loads(args.snapshot.read_text())
+        if args.team is not None and args.team != snapshot["team_id"]:
+            parser.error("--team must match the saved snapshot")
+        if args.week is not None and args.week != snapshot["week"]:
+            parser.error("--week must match the saved snapshot")
+        result = advise_waivers(snapshot, window=args.recent_window, protected_ids=args.protect)
+        if snapshot.get("mode") == "historical_demo" and not args.output_dir:
+            RESULTS_DIR = Path("reports/historical") / str(snapshot["season_year"]) / f"team-{snapshot['team_id']}" / str(snapshot["as_of"])[:10]
+        write_advice(snapshot, result, RESULTS_DIR)
+        if snapshot.get("mode") == "historical_demo":
+            from features.historical_waivers import write_historical_summary
+            actuals_path = args.snapshot.with_name("historical_actuals.json")
+            actuals = json.loads(actuals_path.read_text()) if actuals_path.exists() else []
+            write_historical_summary(result, actuals, RESULTS_DIR)
+            if actuals_path.exists():
+                (RESULTS_DIR / "historical_actuals.json").write_text(json.dumps(actuals, indent=2) + "\n")
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        parser.error(str(exc))
+    print(f"Snapshot replay as of {snapshot['as_of']}: {RESULTS_DIR / 'waiver_recommendations.csv'}")
+    print(result["recommendations"][["rank", "action", "add_name", "drop_name", "net_gain", "status", "recommended"]].head(20).to_string(index=False))
+    sys.exit(0)
+
+waiver_config = None
+if args.team is None and os.environ.get("ESPN_TEAM_ID"):
+    try:
+        args.team = int(os.environ["ESPN_TEAM_ID"])
+    except ValueError:
+        parser.error("ESPN_TEAM_ID must be an integer")
+if args.waiver_config:
+    try:
+        waiver_config = json.loads(args.waiver_config.read_text())
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
+if args.mode == "waivers" and not args.team and (waiver_config or args.protect or args.recent_window is not None):
+    parser.error("The waiver advisor requires --team or ESPN_TEAM_ID")
+
+if args.historical_date:
+    if args.team is None:
+        parser.error("Historical demos require --team or ESPN_TEAM_ID")
+    from espn_api.requests.espn_requests import EspnFantasyRequests, ESPNUnknownError, ESPNAccessDenied
+    from features.historical_waivers import fetch_historical_snapshot, write_historical_summary
+    from features.waiver_advisor import advise_waivers, write_advice
+    try:
+        year = args.season if args.season is not None else int(os.environ["ESPN_YEAR"])
+        league_id = int(os.environ["ESPN_LEAGUE_ID"])
+        request = EspnFantasyRequests(sport="nba", year=year, league_id=league_id,
+                                     cookies={"espn_s2": os.environ["ESPN_S2"], "SWID": os.environ["ESPN_SWID"]})
+        snapshot, actuals = fetch_historical_snapshot(request, year, league_id, args.team, args.historical_date,
+                                                      progress=lambda message: print(message, flush=True))
+        if args.week is not None and args.week != snapshot["week"]:
+            parser.error("--week does not match the historical date")
+        result = advise_waivers(snapshot, window=args.recent_window, protected_ids=args.protect)
+        if not args.output_dir:
+            RESULTS_DIR = Path("reports/historical") / str(year) / f"team-{args.team}" / args.historical_date
+        write_advice(snapshot, result, RESULTS_DIR)
+        write_historical_summary(result, actuals, RESULTS_DIR)
+        (RESULTS_DIR / "historical_actuals.json").write_text(json.dumps(actuals, indent=2) + "\n")
+    except (OSError, ValueError, KeyError, TypeError, ESPNUnknownError, ESPNAccessDenied) as exc:
+        parser.error(str(exc))
+    print(f"Historical demonstration for {snapshot['team_name']}: {RESULTS_DIR / 'historical_demo.md'}")
+    print("Reconstructed assumptions apply; these are simulated moves, not verified historical waiver opportunities.")
+    print(result["recommendations"][["rank", "add_name", "drop_name", "net_gain", "status"]].head(10).to_string(index=False))
+    sys.exit(0)
 
 current_year = int(os.environ["ESPN_YEAR"])
 
@@ -63,34 +154,42 @@ current_league = League(
 )
 
 
-previous_league = League(
-    league_id=int(os.environ["ESPN_LEAGUE_ID"]),
-    year=current_year - 1,
-    espn_s2=os.environ["ESPN_S2"],
-    swid=os.environ["ESPN_SWID"],
-)
+try:
+    previous_league = League(
+        league_id=int(os.environ["ESPN_LEAGUE_ID"]),
+        year=current_year - 1,
+        espn_s2=os.environ["ESPN_S2"],
+        swid=os.environ["ESPN_SWID"],
+    )
+except Exception as exc:
+    if args.mode not in decision_modes.DECISION_MODES:
+        raise
+    warnings.warn(f"Previous season unavailable ({type(exc).__name__}); using current/ESPN projections")
+    previous_league = None
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 RESULTS_DIR.mkdir(exist_ok=True)
 
 
 if args.mode in decision_modes.DECISION_MODES:
-    team_id = int(args.team) if args.team is not None else None
-    report_df = decision_modes.run(
-        args.mode,
-        current_league,
-        previous_league,
-        week=args.week,
-        team_id=team_id,
-        output_dir=RESULTS_DIR,
-    )
+    team_id = int(args.team) if args.team is not None and not args.basic_waivers else None
+    try:
+        report_df = decision_modes.run(
+            args.mode, current_league, previous_league, week=args.week,
+            team_id=team_id, output_dir=RESULTS_DIR, waiver_config=waiver_config,
+            recent_window=args.recent_window, protected_ids=args.protect,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
     csv_name = {
         "draft": "draft_board.csv",
-        "waivers": "waiver_board.csv",
+        "waivers": "waiver_recommendations.csv" if team_id is not None else "waiver_board.csv",
         "startsit": "start_sit.csv",
     }[args.mode]
-    print(f"--mode {args.mode}: wrote reports/{csv_name} ({len(report_df)} rows)")
-    print(report_df.head(20).to_string(index=False))
+    print(f"--mode {args.mode}: wrote {RESULTS_DIR / csv_name} ({len(report_df)} rows)")
+    columns = ["rank", "action", "add_name", "drop_name", "net_gain", "status", "recommended", "explanation"]
+    display = report_df[columns] if "action" in report_df else report_df
+    print(display.head(20).to_string(index=False))
     sys.exit(0)
 
 
@@ -434,4 +533,3 @@ if alert_from and alert_to and alert_app_password:
         print(f"Warning: failed to send digest email: {error}")
 else:
     print("Skipping digest email: ALERT_EMAIL_FROM/ALERT_EMAIL_TO/ALERT_EMAIL_APP_PASSWORD not set")
-

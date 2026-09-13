@@ -29,6 +29,9 @@ SCHEDULE_COLUMNS = [
     "game_date",
     "scoring_period",
     "fantasy_week",
+    "game_id",
+    "tipoff",
+    "status",
 ]
 
 # Days in a standard fantasy-basketball scoring week; used only when an explicit
@@ -48,6 +51,18 @@ CREATE TABLE IF NOT EXISTS nba_schedule (
     PRIMARY KEY (season_year, pro_team, game_date)
 )
 """
+
+
+def _game_status(game):
+    if game.get("statsOfficial"):
+        return "FINAL"
+    if game.get("startTimeTBD") or not game.get("validForLocking", True):
+        return "UNKNOWN"
+    value = game.get("status", "SCHEDULED")
+    if not isinstance(value, str):
+        return "UNKNOWN"
+    value = value.upper().removeprefix("STATUS_")
+    return value if value in {"SCHEDULED", "FINAL", "IN_PROGRESS", "POSTPONED", "CANCELED", "CANCELLED"} else "UNKNOWN"
 
 
 def _scoring_period_to_week(matchup_ids):
@@ -123,6 +138,9 @@ def build_nba_schedule(source, season_year=None, matchup_ids=None):
                         "game_date": game_dt,
                         "scoring_period": scoring_period,
                         "fantasy_week": None,
+                        "game_id": str(game.get("id") or f"{season_year}:{home_id}:{away_id}:{ts}"),
+                        "tipoff": datetime.fromtimestamp(ts / 1000.0, tz=timezone.utc).isoformat(),
+                        "status": _game_status(game),
                     }
                 )
 
@@ -135,7 +153,7 @@ def build_nba_schedule(source, season_year=None, matchup_ids=None):
         lambda sp: _resolve_week(sp, reverse_map, first_period)
     )
     df = df.drop_duplicates(
-        subset=["season_year", "pro_team", "game_date"]
+        subset=["season_year", "pro_team", "game_id"]
     ).sort_values(["pro_team", "game_date"]).reset_index(drop=True)
     return df[SCHEDULE_COLUMNS]
 

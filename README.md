@@ -181,6 +181,18 @@ Full design: `docs/predictive_engine.md`.
 
 ### Decision Modes
 
+The **roster-aware waiver advisor** is available with `--mode waivers --team ID`.
+It weights the last 5–6 games, compares legal add/drop moves against holding,
+and exports daily lineup contributions and a replayable snapshot. See the
+[waiver advisor guide](docs/waiver_advisor.md) for supported rules, examples,
+and missing-data behavior.
+
+To try real previous-season data now, run
+`venv/bin/python main.py --mode waivers --historical-date 2026-01-08 --season 2026 --team 9`.
+The [ybgcorp historical demo](reports/historical/2026/team-9/2026-01-08/historical_demo.md)
+uses pre-date game logs and explicitly labels reconstructed availability and
+injury assumptions. Its saved snapshot also supports offline replay.
+
 `main.py --mode <mode>` runs a single forward-looking report instead of the full weekly pipeline. Decision modes skip the retrospective analysis and all MySQL writes — they only need ESPN and `scipy`.
 
 | Command | Output | What it answers |
@@ -188,6 +200,7 @@ Full design: `docs/predictive_engine.md`.
 | `python main.py` (default) | all reports | the full weekly retrospective + predictive run |
 | `python main.py --mode draft` | `reports/draft_board.csv` | who has the most projected value — the whole pool (rosters + free agents) ranked by rest-of-season VORP, with ESPN's own projection alongside |
 | `python main.py --mode waivers [--week N]` | `reports/waiver_board.csv` | who to pick up — free agents ranked two ways: `ros_rank` (season-long value) and `next_week_rank` (`projection x games that fantasy week`, for streamers) |
+| `python main.py --mode waivers --team ID [--recent-window 5]` | `reports/waiver_recommendations.csv` | which single add/drop move improves your remaining matchup lineup, accounting for recent form and usable games |
 | `python main.py --mode startsit [--week N] [--team ID]` | `reports/start_sit.csv` | who to start — projects your roster for the week, drops `OUT` players, and solves the best legal lineup (`recommended_slot` per player) |
 
 `--mode startsit` needs your team id, from `--team` or the `ESPN_TEAM_ID` env var. `--week` defaults to the current fantasy week.
@@ -248,7 +261,7 @@ ALERT_EMAIL_APP_PASSWORD=your_gmail_app_password
 ESPN_TEAM_ID=
 ```
 
-`ESPN_TEAM_ID` is optional — only `python main.py --mode startsit` uses it (your team id in the league). `ALERT_EMAIL_*` are optional — omit them to skip the weekly email digest. `ALERT_EMAIL_APP_PASSWORD` must be a Gmail [App Password](https://support.google.com/accounts/answer/185833), not your regular account password.
+`ESPN_TEAM_ID` is optional — start/sit and roster-aware waivers use it as your team id. `--basic-waivers` selects the original waiver board even when this variable is set. `ALERT_EMAIL_*` are optional — omit them to skip the weekly email digest. `ALERT_EMAIL_APP_PASSWORD` must be a Gmail [App Password](https://support.google.com/accounts/answer/185833), not your regular account password.
 
 The script expects a MySQL database with tables for:
 

@@ -202,11 +202,21 @@ def _roster_row(player):
 
 
 def run(mode, current_league, previous_league=None, week=None, team_id=None,
-        output_dir=None):
+        output_dir=None, waiver_config=None, recent_window=6, protected_ids=()):
     """Entry point for ``main.py --mode <mode>``. Returns the mode's DataFrame
     and writes its CSV to ``output_dir``."""
     if mode not in DECISION_MODES:
         raise ValueError(f"unknown mode {mode!r}; choose from {DECISION_MODES}")
+
+    if mode == "waivers" and team_id is not None:
+        from features.waiver_inputs import fetch_snapshot
+        from features.waiver_advisor import advise_waivers, write_advice
+
+        snapshot = fetch_snapshot(current_league, previous_league, team_id, week, waiver_config)
+        result = advise_waivers(snapshot, window=recent_window, protected_ids=protected_ids)
+        if output_dir is not None:
+            write_advice(snapshot, result, output_dir)
+        return result["recommendations"]
 
     week = week if week is not None else _current_week(current_league)
 

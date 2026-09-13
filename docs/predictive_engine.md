@@ -116,7 +116,17 @@ Needs your team id: `--team` or the `ESPN_TEAM_ID` env var.
 
 ## Downstream features (backlog, build on 1–3)
 
-- waiver-wire add/drop pair recommendations
+Roster-aware single add/drop recommendations with recent-form projections and
+daily lineup comparison are now available via `--mode waivers --team ID`.
+See the [waiver advisor guide](waiver_advisor.md) for implementation details and
+offline snapshot replay. The generic waiver board remains available with
+`--basic-waivers`.
+
+Detailed proposed scope for roster-aware waivers, usable-game analysis, the live
+draft assistant, and the remaining-week calendar:
+[Live decision support scope](live_decision_support_scope.md).
+
+- multi-move waiver streaming plans (single add/drop pairs are implemented)
 - streaming optimizer over a scoring period
 - injury replacement finder (shares an `eligible_slot` with a ruled-OUT player)
 - trade evaluator (value both sides by ROS VORP + roster need)
