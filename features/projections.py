@@ -51,8 +51,15 @@ def _current_weight(games_played):
 
 
 def _baseline_pg(prior, espn):
-    """Pre-season expectation from prior-year pace and ESPN's projection."""
-    values = [v for v in (prior, espn) if v is not None and np.isfinite(v)]
+    """Pre-season expectation from prior-year pace and ESPN's projection.
+
+    ESPN reports ``0.0`` for players it has no projection for, so a zero is
+    "unknown", not "will score nothing". Treating it as a real value used to
+    make every unprojected player the worst asset on the board and dragged
+    down breakouts for weeks once they had games logged.
+    """
+    values = [v for v in (prior, espn)
+              if v is not None and np.isfinite(v) and v > 0]
     if not values:
         return np.nan
     return float(np.mean(values))

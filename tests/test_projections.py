@@ -16,6 +16,25 @@ class ProjectRestOfSeasonTest(unittest.TestCase):
         self.assertEqual(len(result), 0)
         self.assertIn("ros_total", result.columns)
 
+    def test_zero_espn_projection_is_unknown_not_zero(self):
+        # No prior, ESPN 0 -> no projection at all, not a confident zero.
+        df = pd.DataFrame([
+            {"player_id": 1, "player_name": "Unknown", "position": "SG",
+             "espn_proj_avg_points": 0.0},
+        ])
+        self.assertTrue(np.isnan(project_rest_of_season(df).iloc[0]["proj_pts_per_game"]))
+
+    def test_zero_espn_projection_defers_to_current_pace(self):
+        # Once games are logged, an unprojected player is his own pace.
+        df = pd.DataFrame([
+            {"player_id": 1, "player_name": "Breakout", "position": "SG",
+             "espn_proj_avg_points": 0.0, "current_avg_points": 36.5,
+             "current_games_played": 10},
+        ])
+        row = project_rest_of_season(df).iloc[0]
+        self.assertAlmostEqual(row["proj_pts_per_game"], 36.5)
+        self.assertEqual(row["basis"], "current")
+
     def test_preseason_uses_prior_and_espn_average(self):
         players = pd.DataFrame([
             {"player_id": 1, "player_name": "A", "position": "PG",
