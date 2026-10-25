@@ -63,7 +63,28 @@ parser.add_argument("--basic-waivers", action="store_true", help="use the origin
 parser.add_argument("--historical-date", help="reconstruct a previous-season waiver demo at local midnight (YYYY-MM-DD)")
 parser.add_argument("--season", type=int, help="ESPN season ending year for a historical demo")
 parser.add_argument("--output-dir", type=Path, help="directory for waiver outputs (historical demos default to a separate folder)")
+parser.add_argument("--streaming-plan", action="store_true", help="plan a bounded sequence of current-matchup acquisitions")
+parser.add_argument("--max-moves", type=int, choices=range(4), help="streaming search depth, 0-3 (default 2)")
+parser.add_argument("--streaming-context", type=Path, help="dated injury/opponent context JSON")
+parser.add_argument("--claude-review", action="store_true", help="opt in to one bounded Claude comparison request")
+parser.add_argument("--claude-model", help="explicit Claude model ID for optional review")
 args = parser.parse_args()
+
+if args.streaming_plan and (args.mode != "waivers" or args.basic_waivers or args.historical_date):
+    parser.error("--streaming-plan requires roster-aware waivers or a saved snapshot; historical demos are unsupported")
+if (args.max_moves is not None or args.streaming_context or args.claude_review or args.claude_model) and not args.streaming_plan:
+    parser.error("Streaming options require --streaming-plan")
+streaming_options = None
+if args.streaming_plan:
+    from features.streaming_context import load_context
+    from features.streaming_outputs import run_streaming, summary_frame, explanation
+    try:
+        context_document = load_context(args.streaming_context)
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
+    streaming_options = {"max_moves": args.max_moves if args.max_moves is not None else 2,
+                         "context_document": context_document, "claude": args.claude_review,
+                         "model": args.claude_model}
 
 if (args.snapshot or args.waiver_config or args.protect or args.basic_waivers or args.recent_window is not None or args.historical_date or args.season or args.output_dir) and args.mode != "waivers":
     parser.error("Waiver options require --mode waivers")
@@ -85,6 +106,12 @@ if args.snapshot:
             parser.error("--team must match the saved snapshot")
         if args.week is not None and args.week != snapshot["week"]:
             parser.error("--week must match the saved snapshot")
+        if args.streaming_plan:
+            result = run_streaming(snapshot, window=args.recent_window, protected_ids=args.protect,
+                                   output_dir=RESULTS_DIR, **streaming_options)
+            print(summary_frame(result).drop(columns=["actions", "daily_budget", "issues"]).to_string(index=False))
+            print(explanation(result))
+            sys.exit(0)
         result = advise_waivers(snapshot, window=args.recent_window, protected_ids=args.protect)
         if snapshot.get("mode") == "historical_demo" and not args.output_dir:
             RESULTS_DIR = Path("reports/historical") / str(snapshot["season_year"]) / f"team-{snapshot['team_id']}" / str(snapshot["as_of"])[:10]
@@ -113,7 +140,7 @@ if args.waiver_config:
         waiver_config = json.loads(args.waiver_config.read_text())
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
-if args.mode == "waivers" and not args.team and (waiver_config or args.protect or args.recent_window is not None):
+if args.mode == "waivers" and not args.team and (waiver_config or args.protect or args.recent_window is not None or args.streaming_plan):
     parser.error("The waiver advisor requires --team or ESPN_TEAM_ID")
 
 if args.historical_date:
@@ -177,18 +204,20 @@ if args.mode in decision_modes.DECISION_MODES:
         report_df = decision_modes.run(
             args.mode, current_league, previous_league, week=args.week,
             team_id=team_id, output_dir=RESULTS_DIR, waiver_config=waiver_config,
-            recent_window=args.recent_window, protected_ids=args.protect,
+            recent_window=args.recent_window, protected_ids=args.protect, streaming_options=streaming_options,
         )
     except ValueError as exc:
         parser.error(str(exc))
     csv_name = {
         "draft": "draft_board.csv",
-        "waivers": "waiver_recommendations.csv" if team_id is not None else "waiver_board.csv",
+        "waivers": "streaming_plans.csv" if args.streaming_plan else "waiver_recommendations.csv" if team_id is not None else "waiver_board.csv",
         "startsit": "start_sit.csv",
     }[args.mode]
     print(f"--mode {args.mode}: wrote {RESULTS_DIR / csv_name} ({len(report_df)} rows)")
     columns = ["rank", "action", "add_name", "drop_name", "net_gain", "status", "recommended", "explanation"]
     display = report_df[columns] if "action" in report_df else report_df
+    if args.streaming_plan:
+        display = display.drop(columns=["actions", "daily_budget", "issues"])
     print(display.head(20).to_string(index=False))
     sys.exit(0)
 

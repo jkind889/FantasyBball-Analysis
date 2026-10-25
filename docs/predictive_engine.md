@@ -126,8 +126,9 @@ Detailed proposed scope for roster-aware waivers, usable-game analysis, the live
 draft assistant, and the remaining-week calendar:
 [Live decision support scope](live_decision_support_scope.md).
 
-- multi-move waiver streaming plans (single add/drop pairs are implemented)
-- streaming optimizer over a scoring period
+- bounded multi-move streaming plans are available with `--streaming-plan`;
+  see [the streaming planner](streaming_planner.md) for budgets and search limits
+- exhaustive streaming optimization, waiver-claim sequences, and longer horizons remain deferred
 - injury replacement finder (shares an `eligible_slot` with a ruled-OUT player)
 - trade evaluator (value both sides by ROS VORP + roster need)
 - mock-draft simulator (opponents pick near ADP; Monte Carlo your pick)

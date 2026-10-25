@@ -201,11 +201,17 @@ injury assumptions. Its saved snapshot also supports offline replay.
 | `python main.py --mode draft` | `reports/draft_board.csv` | who has the most projected value — the whole pool (rosters + free agents) ranked by rest-of-season VORP, with ESPN's own projection alongside |
 | `python main.py --mode waivers [--week N]` | `reports/waiver_board.csv` | who to pick up — free agents ranked two ways: `ros_rank` (season-long value) and `next_week_rank` (`projection x games that fantasy week`, for streamers) |
 | `python main.py --mode waivers --team ID [--recent-window 5]` | `reports/waiver_recommendations.csv` | which single add/drop move improves your remaining matchup lineup, accounting for recent form and usable games |
+| `python main.py --mode waivers --team ID --streaming-plan` | `reports/streaming_plans.csv` | bounded multi-move plans with shared acquisition budgets, HOLD, and daily lineup audit |
 | `python main.py --mode startsit [--week N] [--team ID]` | `reports/start_sit.csv` | who to start — projects your roster for the week, drops `OUT` players, and solves the best legal lineup (`recommended_slot` per player) |
 
 `--mode startsit` needs your team id, from `--team` or the `ESPN_TEAM_ID` env var. `--week` defaults to the current fantasy week.
 
 The scoring logic lives in `features/decision_modes.py` (pure, unit-tested); the shared projection chain is `features/predictive_engine.py`.
+
+See [the streaming planner guide](docs/streaming_planner.md) for offline replay,
+dated injury/opponent context, optional Claude comparison, and explicit search limits.
+Claude review is opt-in and falls back to deterministic rankings; it does not change
+computed points or submit roster transactions.
 
 ## Generated Files
 

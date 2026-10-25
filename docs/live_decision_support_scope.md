@@ -4,6 +4,9 @@ Status: section 1 is implemented as a CLI advisor with recent form, daily lineup
 comparison, snapshot replay, and calendar CSV exports. Interactive UI, live draft
 assistance, and later increments remain proposed. See the
 [waiver advisor guide](waiver_advisor.md) for supported rules and limitations.  
+Update: a bounded CLI multi-move iteration with shared budgets and optional Claude
+context comparison is now implemented; see [streaming planner](streaming_planner.md).
+The broader interactive and forecasting proposals below remain scope, not shipped behavior.
 Created: September 10, 2026. Updated: September 13, 2026.
 
 ## Objective
@@ -218,8 +221,8 @@ player's total as a substitute for re-optimizing the roster.
   same lineup engine.
 - A separate rest-of-season view. Until long-horizon availability is modeled,
   label value-over-replacement comparisons as estimates, not exact usable points.
-- Plans using multiple acquisitions in sequence, with effective dates and a
-  shared acquisition budget. The first release evaluates one move at a time.
+- Broader multi-acquisition planning beyond the bounded CLI streaming iteration
+  (which now shares acquisition budgets across dated sequences).
 - FAAB bid advice only after budget, bidding rules, and useful history exist.
 
 ### Acceptance criteria

@@ -5,6 +5,10 @@ your current roster. It uses recent fantasy production and the games your
 lineup can actually use during the remaining matchup. It does not submit ESPN
 transactions.
 
+For bounded multi-move planning with a shared acquisition budget and optional
+dated-context Claude comparison, see [the streaming planner](streaming_planner.md)
+and add `--streaming-plan`. The single-move behavior below remains the default.
+
 ## Run with live league data
 
 ```bash
@@ -195,6 +199,8 @@ the modeled move to tomorrow; a used-up matchup/season allowance rejects it.
 Future daily capacity assumes no intervening acquisitions, since each scenario
 contains only one proposed transaction. First-game roster locks also shift a
 late action to the next day even when the selected player's game starts later.
+Missing current-matchup usage entries no longer default to zero; they stop advice
+until verified usage or an explicit remaining-allowance override is supplied.
 
 Player overrides support `protected`, `undroppable`, `availability`, and
 `available_at`. Unknown waiver processing time is not inferred from a generic

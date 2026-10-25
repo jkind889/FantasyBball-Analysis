@@ -5,6 +5,7 @@ that the espn-api Player wrapper otherwise discards. No raw responses are saved.
 """
 
 import json
+import math
 import warnings
 from collections import defaultdict
 from types import SimpleNamespace
@@ -42,27 +43,33 @@ def normalize_rules(raw, team, config, daily_used=None):
         if limit >= 0 and limit < capacity:
             # ESPN positionLimits keys refer to defaultPositionId (1..5).
             position_limits[POSITION_MAP.get(int(key) - 1, "UNKNOWN")] = limit
-    remaining = "unknown"
+    def count(value):
+        # ESPN sometimes serializes integral limits as floats. Never coerce
+        # missing, boolean, fractional, or negative usage to a real count.
+        if type(value) in (int, float) and math.isfinite(value) and value >= 0 and value == int(value):
+            return int(value)
+        return None
+
     season_limit = acquisition.get("acquisitionLimit")
     matchup_limit = acquisition.get("matchupAcquisitionLimit")
-    daily = acquisition.get("matchupLimitPerScoringPeriod") is True
-    if season_limit == -1 and (matchup_limit == -1 or daily):
-        remaining = None
-    elif (matchup_limit == -1 or daily) and season_limit is not None and season_limit >= 0:
-        used = team.get("transactionCounter", {}).get("acquisitions")
+    period_flag = acquisition.get("matchupLimitPerScoringPeriod")
+    daily = period_flag is True
+    counter = team.get("transactionCounter") or {}
+    season_used = count(counter.get("acquisitions"))
+    season_remaining = None if season_limit == -1 else "unknown"
+    if count(season_limit) is not None and season_used is not None:
+        season_remaining = max(0, count(season_limit) - season_used)
+    matchup_remaining = None if matchup_limit == -1 or daily else "unknown"
+    if period_flag is False and count(matchup_limit) is not None:
+        totals = counter.get("matchupAcquisitionTotals")
+        used = count(totals.get(str(raw["status"]["currentMatchupPeriod"]))) if isinstance(totals, dict) else None
         if used is not None:
-            remaining = max(0, season_limit - used)
-    if not daily and matchup_limit is not None and matchup_limit >= 0:
-        used = team.get("transactionCounter", {}).get("matchupAcquisitionTotals")
-        if isinstance(used, dict):
-            left = max(0, int(matchup_limit) - int(used.get(str(raw["status"]["currentMatchupPeriod"]), 0)))
-            if season_limit == -1:
-                remaining = left
-            elif season_limit is not None and season_limit >= 0:
-                total_used = team.get("transactionCounter", {}).get("acquisitions")
-                if total_used is not None:
-                    remaining = min(left, max(0, season_limit - total_used))
-    # No guessing that lifetime acquisitions are this matchup's acquisitions.
+            matchup_remaining = max(0, count(matchup_limit) - used)
+    # A missing current-matchup entry is unknown, not evidence of zero usage.
+    # Missing daily-vs-matchup semantics are also unknown for finite limits.
+    values = [season_remaining, matchup_remaining]
+    remaining = "unknown" if "unknown" in values else min(
+        (v for v in values if v is not None), default=None)
     rules = {
         "scoring_type": scoring.get("scoringType"),
         "starting_slots": slots, "roster_capacity": capacity,
@@ -72,7 +79,10 @@ def normalize_rules(raw, team, config, daily_used=None):
         "games_cap": None if roster.get("lineupSlotStatLimits") == {} else "unknown",
         "lineup_move_limit": None if roster.get("moveLimit") == -1 else "unknown",
         "acquisitions_remaining": remaining, "position_limits": position_limits,
-        "daily_acquisition_limit": int(matchup_limit) if daily and matchup_limit is not None and matchup_limit >= 0 else None,
+        "season_acquisitions_remaining": season_remaining,
+        "matchup_acquisitions_remaining": matchup_remaining,
+        "daily_acquisition_limit": (count(matchup_limit) if count(matchup_limit) is not None
+                                    else None if matchup_limit == -1 else "unknown") if daily else None,
         "daily_acquisitions_used": daily_used,
         "timezone": config.get("timezone", "America/New_York"),
         "ir_legal": not any(e.get("lineupSlotId") == 13 for e in team.get("roster", {}).get("entries", [])),
