@@ -1,4 +1,6 @@
+import numpy as np
 import pandas as pd
+from features.provider_projections import PROJECTION_COLUMNS, attach_projections
 
 from features.draft_analysis import (
     fetch_missing_draft_analysis_data,
@@ -15,7 +17,8 @@ OUTPUT_COLUMNS = [
     "pro_team",
     "games_played",
     "actual_total_points",
-    "projected_total_points",
+    *PROJECTION_COLUMNS,
+    "season_year",
     "projection_difference",
     "projection_percentile",
     "percent_above_projection",
@@ -24,8 +27,10 @@ OUTPUT_COLUMNS = [
 
 
 def projection_analysis(players_df, draft_df, league=None, output_dir=None,
-                        free_agent_cache=None):
-    """Compare ESPN projected totals with actual totals for rostered players."""
+                        free_agent_cache=None, provider_projections=None):
+    """Compare observed full-season provider totals with actual season-to-date
+    totals. Capture time is not proof that a forecast existed before the season.
+    """
     final_players = players_df.drop_duplicates("player_id", keep="last").rename(
         columns={
             "player_name": "final_player_name",
@@ -69,12 +74,28 @@ def projection_analysis(players_df, draft_df, league=None, output_dir=None,
             missing_player_stats,
         )
 
+    if provider_projections is not None:
+        combined_df = attach_projections(combined_df, provider_projections)
+    for column in PROJECTION_COLUMNS + ["season_year"]:
+        if column not in combined_df:
+            combined_df[column] = None
+    if league is not None and getattr(league, "year", None) is not None:
+        combined_df["season_year"] = combined_df["season_year"].fillna(league.year)
+
     actual_points = pd.to_numeric(combined_df["total_points"], errors="coerce")
     projected_points = pd.to_numeric(
         combined_df["projected_total_points"],
         errors="coerce",
     )
-    is_resolved = actual_points.notna() & projected_points.notna()
+    actual_points = actual_points.where(np.isfinite(actual_points))
+    projected_points = projected_points.where(np.isfinite(projected_points))
+    forecast_season = pd.to_numeric(combined_df["projection_season"], errors="coerce")
+    actual_season = pd.to_numeric(combined_df["season_year"], errors="coerce")
+    compatible = (forecast_season.eq(actual_season) & actual_season.notna()
+                  & combined_df["projection_horizon"].eq("full_season"))
+    verified = (combined_df["projection_source"].fillna("").ne("")
+                & pd.to_datetime(combined_df["projection_observed_at"], errors="coerce", format="mixed", utc=True).notna())
+    is_resolved = actual_points.notna() & projected_points.notna() & compatible & verified
 
     combined_df["actual_total_points"] = actual_points
     combined_df["projected_total_points"] = projected_points
@@ -87,7 +108,7 @@ def projection_analysis(players_df, draft_df, league=None, output_dir=None,
     has_nonzero_projection = is_resolved & (projected_points != 0)
     combined_df.loc[has_nonzero_projection, "percent_above_projection"] = (
         combined_df.loc[has_nonzero_projection, "projection_difference"]
-        / projected_points[has_nonzero_projection]
+        / projected_points[has_nonzero_projection].abs()
         * 100
     ).round(2)
 
@@ -102,11 +123,15 @@ def projection_analysis(players_df, draft_df, league=None, output_dir=None,
         percentiles = pd.Series(50.0, index=resolved_differences.index)
     combined_df.loc[is_resolved, "projection_percentile"] = percentiles.round(2)
 
-    combined_df["projection_status"] = "Missing Stats"
+    combined_df["projection_status"] = "Missing Projection"
+    combined_df.loc[projected_points.notna() & ~verified, "projection_status"] = "Unverified Projection"
+    combined_df.loc[projected_points.notna() & verified & ~compatible, "projection_status"] = "Incompatible Projection"
+    combined_df.loc[actual_points.isna(), "projection_status"] = "Missing Stats"
+    # Percentiles describe the cohort, not whether a player beat a forecast.
+    # Use the signed difference so all-negative/tied/singleton cohorts are honest.
     combined_df.loc[is_resolved, "projection_status"] = combined_df.loc[
-        is_resolved,
-        "projection_percentile",
-    ].map(projection_status_for_percentile)
+        is_resolved, "projection_difference"
+    ].map(projection_status_for_difference)
 
     combined_df["_is_resolved"] = is_resolved
     combined_df = combined_df.sort_values(
@@ -127,13 +152,9 @@ def projection_analysis(players_df, draft_df, league=None, output_dir=None,
     return result_df
 
 
-def projection_status_for_percentile(percentile):
-    if percentile >= 90:
-        return "Far Above Projection"
-    if percentile >= 75:
+def projection_status_for_difference(difference):
+    if difference > 0:
         return "Above Projection"
-    if percentile > 25:
-        return "Near Projection"
-    if percentile > 10:
+    if difference < 0:
         return "Below Projection"
-    return "Far Below Projection"
+    return "At Projection"

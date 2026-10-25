@@ -24,6 +24,10 @@ import features.decision_modes as decision_modes
 from alerts.send_email import send_digest_email
 from cache import _fetch_free_agents
 from database import get_connection
+from features.provider_projections import (
+    require_projection_schema, fetch_projections, save_projection_snapshots,
+    load_projection_snapshots, attach_projections,
+)
 
 
 MIN_GAMES_PLAYED = 41
@@ -224,6 +228,16 @@ if args.mode in decision_modes.DECISION_MODES:
 
 conn = get_connection()
 cursor = conn.cursor()
+try:
+    require_projection_schema(cursor)
+except Exception as exc:
+    cursor.close()
+    conn.close()
+    raise RuntimeError(
+        "Provider projection storage is unavailable. Review and explicitly apply "
+        "migrations/001_provider_projection_snapshots.sql to the intended database "
+        "before running weekly mode; no automatic migration is performed."
+    ) from exc
 
 for team in current_league.teams:
     team_id = team.team_id
@@ -396,6 +410,19 @@ insert_players_from_finalrosters(current_league)
 insert_playerseason_players(current_league,previous_league)
 insert_finalrosters(current_league)
 
+# Capture raw provider fields, including explicit zeros, before normalization can
+# erase the distinction between missing values and library defaults.
+projection_ids = [p.playerId for t in current_league.teams for p in t.roster]
+projection_ids.extend(p.playerId for p in current_league.draft)
+provider_rows = fetch_projections(current_league, projection_ids)
+_projection_by_id = provider_rows.set_index("player_id").to_dict("index")
+for team in current_league.teams:
+    for player in team.roster:
+        if player.playerId in _projection_by_id:
+            player.provider_projection = _projection_by_id[player.playerId]
+save_projection_snapshots(cursor, provider_rows, current_league.league_id)
+conn.commit()
+provider_rows = load_projection_snapshots(conn, current_league.league_id, current_year)
 
 players_df = pd.read_sql(
     """
@@ -427,20 +454,8 @@ players_df = pd.read_sql(
     params=(current_year,),
 )
 
-# player_season doesn't store ESPN projections, so pull them straight off the
-# live roster objects instead of comparing against a hardcoded 0.
-_projected_total = {}
-_projected_avg = {}
-for team in current_league.teams:
-    for player in team.roster:
-        _projected_total[player.playerId] = getattr(
-            player, "projected_total_points", None
-        )
-        _projected_avg[player.playerId] = getattr(
-            player, "projected_avg_points", None
-        )
-players_df["projected_total_points"] = players_df["player_id"].map(_projected_total)
-players_df["projected_avg_points"] = players_df["player_id"].map(_projected_avg)
+players_df["season_year"] = current_year
+players_df = attach_projections(players_df, provider_rows)
 
 draft_df = pd.read_sql(
     """
@@ -489,6 +504,7 @@ draft_analysis_df = draft_analysis.draft_analysis(
 projection_analysis_df = projection_analysis.projection_analysis(
     players_df,
     draft_df,
+    provider_projections=provider_rows,
     league=current_league,
     output_dir=RESULTS_DIR,
     free_agent_cache=shared_free_agent_cache,

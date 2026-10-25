@@ -38,7 +38,7 @@ class ComputePlayerValueTest(unittest.TestCase):
         self.assertAlmostEqual(result.iloc[0]["vorp_per_game"], 3.0)
         self.assertAlmostEqual(result.iloc[0]["vorp_ros"], 3.0 * 40)
 
-    def test_multi_position_player_uses_best_line(self):
+    def test_multi_position_player_uses_scarcest_line(self):
         rows = [_proj(i, f"P{i}", "PG", 30 - i) for i in range(6)]
         rows += [_proj(100 + i, f"C{i}", "C", 20 - i) for i in range(6)]
         rows.append(_proj(999, "Flex", "PG/C", 15))
@@ -46,13 +46,36 @@ class ComputePlayerValueTest(unittest.TestCase):
             pd.DataFrame(rows), roster_slots={"PG": 1, "C": 1}, league_size=3
         )
         flex = result[result["player_name"] == "Flex"].iloc[0]
-        pg_line = result[result["player_name"] == "P2"].iloc[0][
+        c_line = result[result["player_name"] == "C2"].iloc[0][
             "replacement_pts_per_game"
         ]
-        # Flex is eligible at PG and C; it should be measured against the more
-        # favourable (higher) of the two replacement lines -> the PG line.
-        self.assertAlmostEqual(flex["replacement_pts_per_game"], pg_line)
+        # Flex is eligible at PG and C; it should be measured against the
+        # scarcer (lower) of the two replacement lines -> the C line, which
+        # gives it the higher VORP.
+        self.assertAlmostEqual(flex["replacement_pts_per_game"], c_line)
+        self.assertAlmostEqual(flex["vorp_per_game"], 15 - c_line)
 
+    def test_extra_eligibility_never_lowers_value(self):
+        # PF line sits above the C line. A PF/C player must not be valued
+        # below an otherwise-identical C-only player.
+        rows = [_proj(i, f"PF{i}", "PF", 35 - i) for i in range(6)]
+        rows += [_proj(100 + i, f"C{i}", "C", 28 - i) for i in range(6)]
+        rows.append(_proj(998, "OnlyC", "C", 32))
+        rows.append(_proj(999, "BigFlex", "PF/C", 32))
+        result = compute_player_value(
+            pd.DataFrame(rows), roster_slots={"PF": 1, "C": 1}, league_size=3
+        ).set_index("player_name")
+        self.assertGreater(
+            result.loc["PF2", "replacement_pts_per_game"],
+            result.loc["C2", "replacement_pts_per_game"],
+        )
+        self.assertGreaterEqual(
+            result.loc["BigFlex", "vorp_per_game"],
+            result.loc["OnlyC", "vorp_per_game"],
+        )
+        self.assertGreaterEqual(
+            result.loc["BigFlex", "vorp_ros"], result.loc["OnlyC", "vorp_ros"]
+        )
 
 if __name__ == "__main__":
     unittest.main()

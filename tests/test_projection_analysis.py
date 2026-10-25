@@ -7,7 +7,7 @@ import pandas as pd
 
 from features.projection_analysis import (
     projection_analysis,
-    projection_status_for_percentile,
+    projection_status_for_difference,
 )
 
 
@@ -46,6 +46,12 @@ def make_player_row(
         "projected_total_points": projected,
         "projected_avg_points": projected / games_played if games_played else 0,
         "games_played": games_played,
+        "season_year": 2025,
+        "projection_season": 2025,
+        "projection_horizon": "full_season",
+        "projection_source": "espn_player_card",
+        "projection_observed_at": "2025-10-01 00:00:00",
+
     }
 
 
@@ -72,7 +78,9 @@ def make_espn_player(player_id, name, actual, projected, games_played=60):
         projected_total_points=projected,
         projected_avg_points=projected / games_played if games_played else 0,
         year=year,
-        stats={f"{year}_total": {"total": {"GP": games_played}}},
+        stats={f"{year}_total": {"total": {"GP": games_played}},
+               f"{year}_projected": {"applied_total": projected,
+                                       "applied_avg": projected / games_played}},
     )
 
 
@@ -134,7 +142,7 @@ class ProjectionAnalysisTest(unittest.TestCase):
         self.assertEqual(result.loc[0, "projection_difference"], 500)
         self.assertEqual(result.loc[0, "projection_percentile"], 50)
         self.assertTrue(pd.isna(result.loc[0, "percent_above_projection"]))
-        self.assertEqual(result.loc[0, "projection_status"], "Near Projection")
+        self.assertEqual(result.loc[0, "projection_status"], "Above Projection")
 
     def test_tied_differences_receive_average_percentile(self):
         players_df = pd.DataFrame([
@@ -148,7 +156,7 @@ class ProjectionAnalysisTest(unittest.TestCase):
         result = projection_analysis(players_df, draft_df)
 
         self.assertEqual(result["projection_percentile"].tolist(), [50, 50])
-        self.assertEqual(result["projection_status"].tolist(), ["Near Projection"] * 2)
+        self.assertEqual(result["projection_status"].tolist(), ["Above Projection"] * 2)
 
     def test_unresolved_draft_player_is_preserved_below_scored_players(self):
         players_df = pd.DataFrame([
@@ -165,18 +173,11 @@ class ProjectionAnalysisTest(unittest.TestCase):
         self.assertTrue(pd.isna(result.loc[1, "projection_difference"]))
 
     def test_projection_status_boundaries(self):
-        cases = [
-            (90, "Far Above Projection"),
-            (75, "Above Projection"),
-            (25.01, "Near Projection"),
-            (25, "Below Projection"),
-            (10.01, "Below Projection"),
-            (10, "Far Below Projection"),
-        ]
+        cases = [(100, "Above Projection"), (0, "At Projection"), (-1, "Below Projection")]
+        for difference, expected in cases:
+            with self.subTest(difference=difference):
+                self.assertEqual(projection_status_for_difference(difference), expected)
 
-        for percentile, expected in cases:
-            with self.subTest(percentile=percentile):
-                self.assertEqual(projection_status_for_percentile(percentile), expected)
 
     def test_writes_sibling_csv(self):
         players_df = pd.DataFrame([make_player_row(1, "Player", 1200, 1000)])

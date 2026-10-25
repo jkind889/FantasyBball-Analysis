@@ -1,4 +1,5 @@
 import pandas as pd
+from features.provider_projections import PROJECTION_COLUMNS
 from cache import (
     espn_player_to_row,
     _fetch_free_agents,
@@ -17,9 +18,9 @@ PLAYER_STAT_COLUMNS = [
     "pos_rank",
     "total_points",
     "avg_points",
-    "projected_total_points",
-    "projected_avg_points",
     "games_played",
+    "season_year",
+    *PROJECTION_COLUMNS,
 ]
 
 TEAM_SUMMARY_COLUMNS = [
@@ -277,6 +278,11 @@ def merge_missing_draft_analysis_data(draft_analysis_df, missing_player_stats):
     if missing_player_stats.empty:
         return draft_analysis_df
 
+    draft_analysis_df = draft_analysis_df.copy()
+    for column in PROJECTION_COLUMNS:
+        if column not in draft_analysis_df:
+            draft_analysis_df[column] = None
+
     merged_df = draft_analysis_df.merge(
         missing_player_stats,
         on="player_id",
@@ -284,12 +290,22 @@ def merge_missing_draft_analysis_data(draft_analysis_df, missing_player_stats):
         suffixes=("", "_missing"),
     )
 
+    existing_projection = pd.Series(False, index=merged_df.index)
+    for column in PROJECTION_COLUMNS:
+        if column in draft_analysis_df:
+            existing_projection |= merged_df[column].notna()
+
     for column in PLAYER_STAT_COLUMNS:
         missing_column = f"{column}_missing"
         if missing_column not in merged_df.columns:
             continue
 
-        merged_df[column] = merged_df[column].combine_first(merged_df[missing_column])
+        if column in PROJECTION_COLUMNS:
+            merged_df[column] = merged_df[column].where(
+                existing_projection, merged_df[missing_column]
+            )
+        else:
+            merged_df[column] = merged_df[column].combine_first(merged_df[missing_column])
         merged_df = merged_df.drop(columns=missing_column)
 
     return merged_df
@@ -301,8 +317,6 @@ def fill_missing_draft_analysis_data(draft_analysis_df):
         "avg_points",
         "games_played",
         "total_points",
-        "projected_total_points",
-        "projected_avg_points",
         "pos_rank",
     ]
 
@@ -329,7 +343,7 @@ def _draft_player_summary(player, fallback_player_id):
         "pos_rank": player.get("pos_rank"),
         "total_points": summary["total_points"],
         "avg_points": summary["avg_points"],
-        "projected_total_points": player.get("projected_total_points"),
-        "projected_avg_points": player.get("projected_avg_points"),
+        "season_year": player.get("season_year"),
+        **{key: player.get(key) for key in PROJECTION_COLUMNS},
         "games_played": summary["games_played"],
     }

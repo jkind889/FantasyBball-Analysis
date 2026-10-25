@@ -49,7 +49,13 @@ attached and `project_rest_of_season` runs, writing `reports/projections.csv`.
 
 Position eligibility is parsed from the `position` string (`"PG/SG"` ->
 `{PG, SG, G, UTIL}`). Both a global and a per-position replacement level are
-produced so positional scarcity is visible.
+produced so positional scarcity is visible. A multi-position player is
+measured against the scarcest eligible position — the *lowest* replacement line
+among their positions, i.e. the highest VORP — so adding eligibility never
+lowers a player's value. Tradeoff: flexible players as a group can be slightly
+over-credited, since they can't all fill the one scarce slot; a joint slot
+assignment (as `recommend_lineup` / lineup efficiency already do with
+`linear_sum_assignment`) is the fuller fix and a possible follow-up.
 
 This single number ranks a draft board and a waiver list. Wired into `main.py`
 after the projection step, `league_size` from the current league, writing

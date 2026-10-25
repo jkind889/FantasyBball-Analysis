@@ -14,6 +14,7 @@ objects; ``projections.py`` stays a pure DataFrame function. See
 
 import pandas as pd
 
+from features.provider_projections import player_projection
 from cache import _index_players, _lookup_player, espn_player_to_row
 
 PROJECTION_INPUT_COLUMNS = [
@@ -25,6 +26,7 @@ PROJECTION_INPUT_COLUMNS = [
     "current_avg_points",
     "current_games_played",
     "espn_proj_avg_points",
+    "espn_projection_verified",
 ]
 
 
@@ -62,6 +64,7 @@ def projection_input_rows(players, prior_index, season_year):
         player_name = getattr(player, "name", None)
         prior = _lookup_player(prior_index, player_id, player_name) or {}
 
+        provider = player_projection(player, season_year)
         rows.append(
             {
                 "player_id": player_id,
@@ -71,9 +74,8 @@ def projection_input_rows(players, prior_index, season_year):
                 "prior_avg_points": prior.get("avg_points"),
                 "current_avg_points": getattr(player, "avg_points", None),
                 "current_games_played": _season_games_played(player, season_year),
-                "espn_proj_avg_points": getattr(
-                    player, "projected_avg_points", None
-                ),
+                "espn_proj_avg_points": provider["projected_avg_points"],
+                "espn_projection_verified": provider["projected_avg_points"] is not None,
             }
         )
     return rows

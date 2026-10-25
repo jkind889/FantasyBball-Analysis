@@ -13,6 +13,8 @@ class FakePlayer:
         self.avg_points = avg_points
         self.projected_avg_points = projected_avg_points
         self.stats = {f"{year}_total": {"total": {"GP": games_played}}}
+        if projected_avg_points is not None:
+            self.stats[f"{year}_projected"] = {"applied_avg": projected_avg_points}
 
 
 class FakeTeam:

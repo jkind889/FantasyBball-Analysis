@@ -105,9 +105,15 @@ def compute_player_value(projections_df, roster_slots=None, league_size=10,
     def _player_replacement(positions):
         vals = [replacement_pg[p] for p in positions
                 if p in replacement_pg and np.isfinite(replacement_pg[p])]
-        # Best (highest) positional line the player can be slotted against; if
+        # Measure against the scarcest eligible position (lowest replacement
+        # line -> highest VORP), so extra eligibility never lowers value. If
         # they have no known position, fall back to the global line.
-        return max(vals) if vals else global_repl
+        #
+        # Known tradeoff: this can slightly over-credit flexible players as a
+        # group, since they can't all fill the one scarce slot. The fuller fix
+        # is a joint slot assignment (linear_sum_assignment, as in
+        # lineup_efficiency.py / decision_modes.recommend_lineup).
+        return min(vals) if vals else global_repl
 
     df["replacement_pts_per_game"] = df["eligible_positions"].apply(
         _player_replacement

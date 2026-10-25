@@ -37,7 +37,7 @@ The current draft-analysis minimum is `21` games played.
 
 ### Projection Analysis
 
-`features/projection_analysis.py` compares actual player totals against projected totals and labels each player by projection performance.
+`features/projection_analysis.py` compares actual season-to-date totals with observed ESPN full-season forecasts. Missing forecasts remain blank; provider defaults of zero are not treated as forecasts. This is a descriptive comparison, not verified preseason forecast accuracy. Weekly mode requires the reviewed projection-storage migration described in [provider projection guidance](docs/provider_projections.md).
 
 Output:
 
@@ -47,8 +47,10 @@ Key fields:
 
 - `roster_source`: whether the player appeared in the draft, final roster, or both.
 - `projection_difference`: actual total points minus projected total points.
-- `percent_above_projection`: projection difference as a percentage of projected points.
-- `projection_status`: `Far Above Projection`, `Above Projection`, `Near Projection`, `Below Projection`, or `Far Below Projection`.
+- `percent_above_projection`: difference as a percentage of the absolute projected total; blank when the forecast is missing or legitimately zero.
+- `projection_status`: `Above Projection`, `At Projection`, or `Below Projection` from the signed difference; unavailable rows explain missing stats, missing projections, or incompatible/unverified forecasts.
+- `projection_percentile`: relative rank of valid differences; it does not determine above/below labels.
+- `projection_season`, `projection_horizon`, `projection_source`, and `projection_observed_at`: provenance for the selected provider observation. Captured forecasts are retained in `provider_projection_snapshots`; missing ESPN responses cannot erase them.
 
 ### Roster Points Comparison
 
@@ -174,7 +176,7 @@ The digest is sent automatically at the end of `main.py` when `ALERT_EMAIL_FROM`
 Points the same math forward to help *before* the draft and *during* the season. Every `main.py` run also produces:
 
 - `reports/projections.csv` — `features/projections.py` blends prior-season pace, current-season pace, and ESPN's projection into `proj_pts_per_game`, weighted by how many games a player has logged this season, then extends it over `games_remaining` (exact, from the NBA schedule) for a `ros_total`.
-- `reports/player_value.csv` — `features/player_value.py` turns those projections into `vorp_ros` (value over replacement): `proj_pts_per_game` minus the projected rate of the last startable player at the position, times games remaining. One number that ranks a draft board and a waiver list the same way.
+- `reports/player_value.csv` — `features/player_value.py` turns those projections into `vorp_ros` (value over replacement): `proj_pts_per_game` minus the projected rate of the last startable player at the position (for multi-position players, their scarcest eligible position, so extra eligibility never lowers value), times games remaining. One number that ranks a draft board and a waiver list the same way.
 - `reports/nba_schedule.csv` + `nba_schedule` table — `features/nba_schedule.py` flattens ESPN's pro-team schedule to one row per team per game, and derives games remaining and a team-by-fantasy-week game grid.
 
 Full design: `docs/predictive_engine.md`.
@@ -275,6 +277,7 @@ The script expects a MySQL database with tables for:
 - `players`
 - `draft_picks`
 - `player_season`
+- `provider_projection_snapshots` (explicit migration; see [rollout guidance](docs/provider_projections.md))
 - `final_rosters`
 - `matchups`
 

@@ -241,7 +241,9 @@ def run_preseason_backtest(inputs_df, league_size, draft_df=None,
     realized_pg = realized[realized["games_played"] >= min_games_per_game]
 
     by_id = inputs_df.set_index("player_id")
-    espn = by_id["espn_proj_avg_points"].replace(0, np.nan)
+    espn = by_id["espn_proj_avg_points"].copy()
+    verified = by_id.get("espn_projection_verified", pd.Series(False, index=by_id.index)).fillna(False)
+    espn = espn.mask(espn.eq(0) & ~verified.astype(bool))
     candidates = {
         "engine_vorp": board.set_index("player_id")["vorp_ros"],
         "engine_ppg": board.set_index("player_id")["proj_pts_per_game"],

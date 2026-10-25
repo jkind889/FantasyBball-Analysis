@@ -11,6 +11,7 @@ from collections import defaultdict
 from types import SimpleNamespace
 
 import pandas as pd
+from features.provider_projections import raw_projection
 from espn_api.basketball.constant import POSITION_MAP
 from espn_api.basketball.player import Player
 from espn_api.requests.espn_requests import ESPNUnknownError, ESPNAccessDenied
@@ -276,7 +277,12 @@ def fetch_snapshot(league, previous_league, team_id, week=None, config=None):
                for e in entries}
     for entry in entries:
         pid = entry["player"]["id"]
-        splits = card_map.get(pid, entry)["player"].get("stats", [])
+        raw_player = card_map.get(pid, entry)["player"]
+        objects[pid].provider_projection = raw_projection(
+            raw_player, league.year,
+            pd.Timestamp.now(tz="UTC").tz_localize(None).isoformat(),
+        )
+        splits = raw_player.get("stats", [])
         # Player defaults absent projections to 0; preserve missingness for advice.
         if not any(s.get("seasonId") == league.year and s.get("statSourceId") == 1
                    and s.get("statSplitTypeId") == 0 and "appliedAverage" in s for s in splits):

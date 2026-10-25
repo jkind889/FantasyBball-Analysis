@@ -50,19 +50,13 @@ def _current_weight(games_played):
     return frac * MAX_CURRENT_WEIGHT
 
 
-def _baseline_pg(prior, espn):
-    """Pre-season expectation from prior-year pace and ESPN's projection.
-
-    ESPN reports ``0.0`` for players it has no projection for, so a zero is
-    "unknown", not "will score nothing". Treating it as a real value used to
-    make every unprojected player the worst asset on the board and dragged
-    down breakouts for weeks once they had games logged.
-    """
-    values = [v for v in (prior, espn)
-              if v is not None and np.isfinite(v) and v > 0]
-    if not values:
-        return np.nan
-    return float(np.mean(values))
+def _baseline_pg(prior, espn, espn_verified=False):
+    """Preserve verified provider zero; bare legacy zero inputs are ambiguous."""
+    values = [prior] if prior is not None and np.isfinite(prior) and prior > 0 else []
+    if (espn is not None and np.isfinite(espn)
+            and (espn > 0 or espn_verified)):
+        values.append(espn)
+    return float(np.mean(values)) if values else np.nan
 
 
 def _project_row(row):
@@ -72,7 +66,8 @@ def _project_row(row):
     gp = row.get("current_games_played")
     gp = float(gp) if gp is not None and np.isfinite(gp) else 0.0
 
-    baseline = _baseline_pg(prior, espn)
+    verified = row.get("espn_projection_verified", False)
+    baseline = _baseline_pg(prior, espn, pd.notna(verified) and bool(verified))
     have_current = current is not None and np.isfinite(current) and gp > 0
 
     weight = _current_weight(gp) if have_current else 0.0
