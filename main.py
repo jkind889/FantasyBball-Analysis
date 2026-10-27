@@ -1,4 +1,10 @@
-import argparse
+from dotenv import load_dotenv
+from cli import parse_args
+
+# Parse and finish the menu before importing provider/database orchestration.
+load_dotenv()
+parser, args = parse_args()
+
 import json
 import os
 import sys
@@ -7,7 +13,6 @@ from pathlib import Path
 
 from espn_api.basketball import League
 import pandas as pd
-from dotenv import load_dotenv
 import features.draft_analysis as draft_analysis
 import features.projection_analysis as projection_analysis
 import features.roster_points_comparison as roster_points_comparison
@@ -33,55 +38,11 @@ from features.provider_projections import (
 MIN_GAMES_PLAYED = 41
 OUTPUT_DIR = Path("data")
 RESULTS_DIR = Path("reports")
-load_dotenv()
 
-parser = argparse.ArgumentParser(description="FantasyBball-Analysis pipeline")
-parser.add_argument(
-    "--mode",
-    choices=("weekly",) + decision_modes.DECISION_MODES,
-    default="weekly",
-    help=(
-        "weekly (default): full retrospective + predictive run. "
-        "draft / waivers / startsit: a single forward-looking decision report."
-    ),
-)
-parser.add_argument(
-    "--week",
-    type=int,
-    default=None,
-    help="fantasy week for waivers/startsit (default: current week)",
-)
-parser.add_argument(
-    "--team",
-    type=int,
-    default=None,
-    help="your team id for startsit or the waiver advisor (default: ESPN_TEAM_ID)",
-)
-parser.add_argument("--recent-window", type=int, choices=(5, 6), default=None,
-                    help="recent appearances used by the waiver advisor")
-parser.add_argument("--protect", type=int, action="append", default=[], metavar="PLAYER_ID",
-                    help="protect a rostered player from waiver drops (repeatable)")
-parser.add_argument("--waiver-config", type=Path, help="JSON rule/player overrides for live waiver advice")
-parser.add_argument("--snapshot", type=Path, help="replay a saved waiver snapshot without ESPN or MySQL")
-parser.add_argument("--basic-waivers", action="store_true", help="use the original non-roster-aware waiver board")
-parser.add_argument("--historical-date", help="reconstruct a previous-season waiver demo at local midnight (YYYY-MM-DD)")
-parser.add_argument("--season", type=int, help="ESPN season ending year for a historical demo")
-parser.add_argument("--output-dir", type=Path, help="directory for waiver outputs (historical demos default to a separate folder)")
-parser.add_argument("--streaming-plan", action="store_true", help="plan a bounded sequence of current-matchup acquisitions")
-parser.add_argument("--max-moves", type=int, choices=range(4), help="streaming search depth, 0-3 (default 2)")
-parser.add_argument("--streaming-context", type=Path, help="dated injury/opponent context JSON")
-parser.add_argument("--claude-review", action="store_true", help="opt in to one bounded Claude comparison request")
-parser.add_argument("--claude-model", help="explicit Claude model ID for optional review")
-args = parser.parse_args()
-
-if args.streaming_plan and (args.mode != "waivers" or args.basic_waivers or args.historical_date):
-    parser.error("--streaming-plan requires roster-aware waivers or a saved snapshot; historical demos are unsupported")
-if (args.max_moves is not None or args.streaming_context or args.claude_review or args.claude_model) and not args.streaming_plan:
-    parser.error("Streaming options require --streaming-plan")
 streaming_options = None
 if args.streaming_plan:
     from features.streaming_context import load_context
-    from features.streaming_outputs import run_streaming, summary_frame, explanation
+    from features.streaming_outputs import run_streaming, summary_frame, explanation, console_summary
     try:
         context_document = load_context(args.streaming_context)
     except (OSError, ValueError) as exc:
@@ -90,14 +51,6 @@ if args.streaming_plan:
                          "context_document": context_document, "claude": args.claude_review,
                          "model": args.claude_model}
 
-if (args.snapshot or args.waiver_config or args.protect or args.basic_waivers or args.recent_window is not None or args.historical_date or args.season or args.output_dir) and args.mode != "waivers":
-    parser.error("Waiver options require --mode waivers")
-if args.basic_waivers and (args.snapshot or args.waiver_config or args.protect or args.recent_window is not None or args.historical_date):
-    parser.error("--basic-waivers cannot be combined with advisor options")
-if args.season is not None and not args.historical_date:
-    parser.error("--season requires --historical-date")
-if args.historical_date and (args.snapshot or args.waiver_config):
-    parser.error("--historical-date cannot be combined with --snapshot or --waiver-config")
 if args.output_dir:
     RESULTS_DIR = args.output_dir
 if args.snapshot:
@@ -113,7 +66,7 @@ if args.snapshot:
         if args.streaming_plan:
             result = run_streaming(snapshot, window=args.recent_window, protected_ids=args.protect,
                                    output_dir=RESULTS_DIR, **streaming_options)
-            print(summary_frame(result).drop(columns=["actions", "daily_budget", "issues"]).to_string(index=False))
+            print(console_summary(summary_frame(result)).to_string(index=False))
             print(explanation(result))
             sys.exit(0)
         result = advise_waivers(snapshot, window=args.recent_window, protected_ids=args.protect)
@@ -221,7 +174,7 @@ if args.mode in decision_modes.DECISION_MODES:
     columns = ["rank", "action", "add_name", "drop_name", "net_gain", "status", "recommended", "explanation"]
     display = report_df[columns] if "action" in report_df else report_df
     if args.streaming_plan:
-        display = display.drop(columns=["actions", "daily_budget", "issues"])
+        display = console_summary(display)
     print(display.head(20).to_string(index=False))
     sys.exit(0)
 

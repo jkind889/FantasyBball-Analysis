@@ -299,6 +299,30 @@ CREATE TABLE matchups (
 
 ## Run
 
+For a guided menu, run:
+
+```bash
+venv/bin/python main.py --interactive
+```
+
+Choose a number for weekly reports, draft, waiver advice, start/sit, streaming,
+the basic waiver board, snapshot replay, or a historical demo. The menu asks
+only for options relevant to that report, using `ESPN_TEAM_ID` and `ESPN_YEAR`
+where appropriate. Streaming plans offer optional Claude review, off by default;
+if enabled, type the model ID you have access to. This uses your existing
+Anthropic credentials and may incur API charges. Model access is not checked
+by the menu. See [streaming setup](docs/streaming_planner.md).
+
+Enter accepts the displayed default or skips optional fields. At the mode prompt,
+Enter cancels. Type `q` at any prompt, press Ctrl-C, or send EOF to cancel before
+execution. The menu shows a reusable command and asks you to confirm the run
+(default: no). Weekly mode still updates MySQL and may send the configured email.
+Other modes retain their existing report-writing behavior.
+
+Use `--interactive` on its own in a terminal. Existing flags and scheduled runs
+never prompt; `--help` lists the available flags. A run without flags still starts
+the full weekly pipeline:
+
 ```bash
 venv/bin/python main.py
 ```

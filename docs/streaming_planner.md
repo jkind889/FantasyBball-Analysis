@@ -149,6 +149,22 @@ deterministic/model choices, and limitations. `streaming_snapshot.json` can be
 replayed. `streaming_review.txt` explains the comparison/fallback.
 Rank remains deterministic even when Claude selects a different plan; use the
 `selected` column. Partial inputs never produce a definitive recommendation.
+When every plan is partial, the text report labels HOLD as a **fallback**, not a
+recommendation or the best scored plan. Positive gains on partial plans remain
+provisional. A shared blocker legend names affected players, suggests checks,
+and lists the blocker codes for each partial plan. Up to 20 distinct reasons
+are printed; the CSV `issues` column and JSON retain every reason.
+
+Claude statuses distinguish skips before the API request from validated output.
+`insufficient_plan_data` means there were no evidence-complete plans to compare.
+`error_or_invalid_output` does not establish whether a request was dispatched;
+that status also includes local validation failures. Optional injury/matchup
+context coverage is summarized separately for roster/plan players and the full
+pool; missing optional context is not a plan-completeness gate.
+
+Terminal allowance values say `unlimited` where the JSON stores `null` and the
+CSV stores a blank. Daily acquisition limits still apply and are shown separately.
+Numeric totals, export schemas, evidence gates, and selection policies are unchanged.
 Replays preserve source decision time and player protection; pass the same
 `--max-moves` and context file to reproduce the same search/review inputs.
 

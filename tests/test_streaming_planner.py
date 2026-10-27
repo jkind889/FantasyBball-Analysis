@@ -14,7 +14,7 @@ import pandas as pd
 import requests
 
 from features.streaming_context import load_context, normalize_context
-from features.streaming_outputs import run_streaming, summary_frame
+from features.streaming_outputs import console_summary, explanation, run_streaming, summary_frame
 from features.streaming_planner import plan_streaming, validate_plan
 from features.streaming_review import review_plans
 from features.waiver_inputs import normalize_rules, daily_acquisitions
@@ -42,6 +42,89 @@ def context_entry(**changes):
     return dict({"id": "injury-2", "kind": "injury", "player_id": 2,
                  "observed_at": "2026-01-15T15:00:00Z", "source": "Synthetic injury report",
                  "summary": "Available but reports ankle soreness; no minutes limit verified."}, **changes)
+
+
+class StreamingDiagnosticTests(unittest.TestCase):
+    def test_partial_plans_explain_blockers_without_recommending_hold(self):
+        snapshot = sequence_snapshot()
+        snapshot["schedule_complete"] = False
+        snapshot["players"][0]["recent_logs_complete"] = False
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "offline-fixture"}, clear=True), \
+                patch("features.streaming_review._request") as request:
+            result = run_streaming(snapshot, claude=True, model="fixture")
+        original = deepcopy(result)
+        text = explanation(result)
+        self.assertIn("Fallback selection: hold (HOLD)", text)
+        self.assertIn("this is not a recommendation", text)
+        self.assertNotIn("deterministic best:", text)
+        self.assertIn("Skipped before API request: no evidence-complete plans", text)
+        self.assertIn("Schedule coverage or scoring-period mapping is incomplete", text)
+        self.assertIn("supply matchup_scoring_periods only after verification", text)
+        self.assertIn(f"{snapshot['players'][0]['player_name']} [1]: missing or incomplete game logs", text)
+        for plan in result["plans"]:
+            self.assertIn(f"Plan {plan['plan_id']} (provisional gain", text)
+        self.assertTrue(any(p["net_gain"] > 0 for p in result["plans"]))
+        self.assertEqual(result, original)
+        request.assert_not_called()
+
+    def test_evidence_complete_hold_is_a_recommendation(self):
+        result = run_streaming(sequence_snapshot(), max_moves=0)
+        text = explanation(result)
+        self.assertIn("Recommended plan: hold; evidence-complete deterministic best: hold", text)
+        self.assertNotIn("Fallback selection", text)
+        self.assertNotIn("Blocking reasons", text)
+
+    def test_unlimited_display_preserves_numeric_exports_and_zero(self):
+        snapshot = sequence_snapshot()
+        snapshot["rules"].update(acquisitions_remaining=0, matchup_acquisitions_remaining=None,
+                                 season_acquisitions_remaining=None)
+        result = run_streaming(snapshot)
+        exported = summary_frame(result)
+        original = exported.copy(deep=True)
+        display = console_summary(exported)
+        self.assertEqual(display.iloc[0]["acquisitions_remaining"], "0")
+        self.assertEqual(display.iloc[0]["matchup_acquisitions_remaining"], "unlimited")
+        pd.testing.assert_frame_equal(exported, original)
+        self.assertIsNone(result["plans"][0]["budget_after"]["matchup_acquisitions_remaining"])
+        text = explanation(result)
+        self.assertIn("matchup_acquisitions_remaining=unlimited", text)
+        self.assertIn("daily limits still apply", text)
+        self.assertIn("Daily acquisition limit: 1; already used on snapshot day: 0", text)
+
+    def test_optional_context_is_summarized_and_separate_from_blockers(self):
+        result = run_streaming(sequence_snapshot(), max_moves=0)
+        result["context"]["coverage"] += [
+            {"player_id": pid, "kind": kind, "status": "missing_fresh_context"}
+            for pid in range(1000, 2000) for kind in ("injury", "matchup")
+        ]
+        result["context"]["entries"] = [
+            dict(context_entry(id=f"entry-{i}"), status="stale") for i in range(100)
+        ]
+        text = explanation(result)
+        self.assertIn("Optional context: 2 missing fresh", text)
+        self.assertIn("2006 across the full player pool", text)
+        self.assertIn("This count does not block Claude review", text)
+        self.assertIn("Supplied context entries: stale=100", text)
+        self.assertNotIn("entry-99", text)
+        self.assertNotIn("Blocking reasons", text)
+
+    def test_many_blockers_are_bounded_with_per_plan_export_reference(self):
+        result = run_streaming(sequence_snapshot(), max_moves=0)
+        result["plans"][0].update(status="partial", issues=[f"Unknown tipoff for team {i:03}" for i in range(100)])
+        result["recommended"] = False
+        text = explanation(result)
+        self.assertIn("80 additional reasons omitted", text)
+        self.assertIn("Plan hold (provisional gain +0.0)", text)
+        self.assertIn("80 additional reasons in exports", text)
+        self.assertNotIn("Unknown tipoff for team 099", text)
+        self.assertEqual(len(summary_frame(result).iloc[0]["issues"].split("; ")), 100)
+
+    def test_failed_review_does_not_claim_request_was_or_was_not_sent(self):
+        result = run_streaming(sequence_snapshot())
+        result["review"]["status"] = "error_or_invalid_output"
+        text = explanation(result)
+        self.assertIn("request dispatch is not recorded", text)
+        self.assertNotIn("no API request sent", text)
 
 
 class AcquisitionInputTests(unittest.TestCase):
