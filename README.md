@@ -35,6 +35,14 @@ Key fields:
 
 The current draft-analysis minimum is `21` games played.
 
+### Frozen Draft Replay
+
+`features/draft_replay.py` replays a supplied pre-draft snapshot and ordered picks
+without provider, database or model calls. It shows available alternatives,
+value differences and roster slot consequences, with explicit partial results
+when historical inputs are missing. See the [input contract and commands](docs/draft_replay.md).
+The included [example](examples/draft_snapshot.synthetic.json) is synthetic.
+
 ### Projection Analysis
 
 `features/projection_analysis.py` compares actual season-to-date totals with observed ESPN full-season forecasts. Missing forecasts remain blank; provider defaults of zero are not treated as forecasts. This is a descriptive comparison, not verified preseason forecast accuracy. Weekly mode requires the reviewed projection-storage migration described in [provider projection guidance](docs/provider_projections.md).
