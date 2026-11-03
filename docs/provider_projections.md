@@ -101,7 +101,13 @@ grade. The offline frozen replay continues to enforce its original requirements.
 The route prepares files in a temporary sibling directory, commits the database
 transaction, then publishes the new directory. Pre-commit failures roll back;
 a failed commit acknowledgment is explicitly reported as uncertain. If publishing
-the directory fails after commit, the error explicitly says storage committed.
+the directory fails after commit, the error explicitly says storage committed and
+names the hidden `.draft-capture-*` sibling where the prepared report was kept.
+Committed-export and uncertain-commit failures exit with status 1 and no usage
+text, because storage may have changed. Other capture errors (validation, ESPN
+request, schema or connection failures, before any commit) print usage and exit 2. The destination is checked without following symlinks, so a
+dangling symlink is rejected before any storage query. ESPN request errors are
+reported by exception type only; their messages can embed cookies.
 Inspect storage before retrying an uncertain operation; rerunning a successful
 capture intentionally appends a new observation rather than overwriting history.
 

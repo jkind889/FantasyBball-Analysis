@@ -46,7 +46,9 @@ if args.capture_draft_projections:
     try:
         summary = run_from_environment(args.season, args.output_dir)
     except (CaptureExportError, CaptureCommitUncertainError) as exc:
-        parser.error(str(exc))
+        # Storage may have changed: not an argument error, so no usage text or exit 2.
+        print(f"{parser.prog}: error: {exc}", file=sys.stderr)
+        sys.exit(1)
     except ValueError as exc:
         parser.error(str(exc))
     except Exception as exc:

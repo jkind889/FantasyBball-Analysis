@@ -211,6 +211,26 @@ class DraftProjectionCaptureTests(unittest.TestCase):
         self.assertEqual(self.conn.commits, 1)
         self.assertEqual(self.conn.rollbacks, 0)
         self.assertFalse(self.out.exists())
+        kept = [p for p in Path(self.tmp.name).iterdir() if p.name.startswith(".draft-capture-")]
+        self.assertEqual(len(kept), 1)
+        self.assertTrue((kept[0] / "draft_pick_projections.csv").is_file())
+
+    def test_dangling_symlink_destination_rejected_before_storage(self):
+        self.out.symlink_to(Path(self.tmp.name) / "missing-target")
+        with self.assertRaisesRegex(ValueError, "already exists"):
+            capture_draft_projections(self.conn, Request(), LEAGUE, YEAR, self.out)
+        self.assertEqual(self.conn.cursor_calls, 0)
+        self.assertEqual(self.count(), 0)
+
+    def test_provider_request_error_text_is_suppressed(self):
+        request = Request()
+        request.league_get = lambda **kwargs: (_ for _ in ()).throw(
+            ValueError("Invalid header value b'espn_s2=SECRET\\nX; SWID={SECRET}'"))
+        with self.assertRaises(ValueError) as error:
+            capture_draft_projections(self.conn, request, LEAGUE, YEAR, self.out)
+        self.assertNotIn("SECRET", str(error.exception))
+        self.assertIsNone(error.exception.__cause__)
+        self.assertEqual(self.count(), 0)
 
     def test_failed_commit_acknowledgment_is_explicitly_uncertain(self):
         self.conn.fail_commit = True

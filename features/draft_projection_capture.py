@@ -119,7 +119,8 @@ def capture_draft_projections(conn, request, league_id, season_year, output_dir)
     _positive_int(league_id, "league_id")
     _positive_int(season_year, "season_year")
     output_dir = Path(output_dir)
-    if output_dir.exists():
+    # lexists: a dangling symlink must be rejected now, not after the commit.
+    if os.path.lexists(output_dir):
         raise ValueError("Capture output directory already exists; choose a new directory to preserve prior reports")
     output_dir.parent.mkdir(parents=True, exist_ok=True)
     cursor = conn.cursor()
@@ -136,7 +137,12 @@ def capture_draft_projections(conn, request, league_id, season_year, output_dir)
         cursor.execute("""SELECT overall_pick, team_id, player_id, round_num, round_pick
                           FROM draft_picks WHERE season_year = %s ORDER BY overall_pick""", (season_year,))
         picks = _validated_picks(cursor.fetchall(), "Stored draft")
-        data = request.league_get(params={"view": ["mSettings", "mDraftDetail"]})
+        try:
+            data = request.league_get(params={"view": ["mSettings", "mDraftDetail"]})
+        except Exception as exc:
+            # Library messages can embed request headers, including ESPN cookies.
+            raise ValueError(f"ESPN draft request failed ({type(exc).__name__}); "
+                             "request details suppressed. No forecasts saved.") from None
         period = verify_source_draft(data, picks, league_id, season_year)
         league = SimpleNamespace(year=season_year, finalScoringPeriod=period, espn_request=request)
         fresh = fetch_projections(league, [pick[2] for pick in picks])
@@ -169,15 +175,18 @@ def capture_draft_projections(conn, request, league_id, season_year, output_dir)
         commit_started = True
         conn.commit()
         committed = True
-        if output_dir.exists():
+        if os.path.lexists(output_dir):
             raise FileExistsError("Destination appeared during capture")
         temporary.rename(output_dir)
         temporary = None
         return summary
     except Exception as exc:
         if committed:
+            # Keep the prepared report: it is the only export of committed rows.
+            preserved, temporary = temporary, None
+            location = f" Prepared report kept at {preserved}." if preserved is not None else ""
             raise CaptureExportError(
-                f"Database capture committed {saved_count} observations, but report export failed. "
+                f"Database capture committed {saved_count} observations, but report export failed.{location} "
                 "Do not assume rollback or automatically repeat the capture."
             ) from exc
         if commit_started:
@@ -193,7 +202,9 @@ def capture_draft_projections(conn, request, league_id, season_year, output_dir)
         raise
     finally:
         _cleanup(cursor.close, "Cursor cleanup", cleanup_warnings)
-        if temporary is not None:
+        # After commit the prepared report is the only export; never delete it
+        # (covers interrupts, which bypass the except block above).
+        if temporary is not None and not committed:
             _cleanup(lambda: shutil.rmtree(temporary), "Temporary report cleanup", cleanup_warnings)
 
 
@@ -201,7 +212,10 @@ def run_from_environment(season_year, output_dir):
     """Live boundary, invoked only by the explicit draft capture CLI option."""
     from database import get_connection
     from espn_api.requests.espn_requests import EspnFantasyRequests
-    league_id = int(os.environ["ESPN_LEAGUE_ID"])
+    try:
+        league_id = int(os.environ["ESPN_LEAGUE_ID"])
+    except (KeyError, ValueError):
+        raise ValueError("ESPN_LEAGUE_ID must be set to an integer league ID") from None
     request = EspnFantasyRequests(sport="nba", year=season_year, league_id=league_id,
                                  cookies={"espn_s2": os.environ["ESPN_S2"], "SWID": os.environ["ESPN_SWID"]})
     conn = get_connection()
