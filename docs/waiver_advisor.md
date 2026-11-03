@@ -123,8 +123,9 @@ ESPN uses the ending year, so `--season 2026` selects 2025–26. This command do
 not change `ESPN_YEAR` in `.env`. Outputs go into a separate directory:
 `reports/historical/2026/team-9/2026-01-08/`.
 
-A real-data run is included there: [view the ybgcorp demo](../reports/historical/2026/team-9/2026-01-08/historical_demo.md).
-Replay it without network or MySQL:
+Generated reports are not tracked in Git, so run the command above first to
+create `historical_demo.md` and the snapshot there. Then replay it without
+network or MySQL:
 
 ```bash
 venv/bin/python main.py --mode waivers --snapshot reports/historical/2026/team-9/2026-01-08/waiver_snapshot.json

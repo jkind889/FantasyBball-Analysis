@@ -199,9 +199,9 @@ and missing-data behavior.
 
 To try real previous-season data now, run
 `venv/bin/python main.py --mode waivers --historical-date 2026-01-08 --season 2026 --team 9`.
-The [ybgcorp historical demo](reports/historical/2026/team-9/2026-01-08/historical_demo.md)
-uses pre-date game logs and explicitly labels reconstructed availability and
-injury assumptions. Its saved snapshot also supports offline replay.
+The generated demo (`reports/historical/2026/team-9/2026-01-08/historical_demo.md`,
+not tracked in Git) uses pre-date game logs and explicitly labels reconstructed
+availability and injury assumptions. Its saved snapshot also supports offline replay.
 
 `main.py --mode <mode>` runs a single forward-looking report instead of the full weekly pipeline. Decision modes skip the retrospective analysis and all MySQL writes — they only need ESPN and `scipy`.
 
