@@ -44,6 +44,11 @@ class PreseasonInputsTest(unittest.TestCase):
         self.assertTrue(out["current_avg_points"].isna().all())
         self.assertTrue((out["current_games_played"] == 0).all())
 
+    def test_strips_after_the_fact_espn_forecast(self):
+        out = preseason_inputs(_inputs())
+        self.assertTrue(out["espn_proj_avg_points"].isna().all())
+        self.assertFalse(out["espn_projection_verified"].any())
+
 
 class RealizedValueTest(unittest.TestCase):
     def test_uses_actual_rate_and_games(self):
@@ -130,7 +135,7 @@ class RunPreseasonBacktestTest(unittest.TestCase):
         summary = result["summary"]
         self.assertEqual(
             set(summary["candidate"]),
-            {"engine_vorp", "engine_ppg", "espn_proj", "prior_ppg", "draft_order"},
+            {"engine_vorp", "engine_ppg", "prior_ppg", "draft_order"},
         )
         self.assertEqual(
             set(summary["target"]),
@@ -144,6 +149,8 @@ class RunPreseasonBacktestTest(unittest.TestCase):
         # P3 played 5 games and is filtered out of the misses table.
         self.assertNotIn(3, set(misses["player_id"]))
         self.assertIn("espn_proj_avg_points", misses.columns)
+        # Misses show the engine's inputs, which never include the post-season forecast.
+        self.assertTrue(misses["espn_proj_avg_points"].isna().all())
 
 
 if __name__ == "__main__":

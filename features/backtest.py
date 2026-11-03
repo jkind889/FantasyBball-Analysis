@@ -6,8 +6,9 @@ Given a projection-inputs frame for a *finished* season (see
 point with only the information available then, scores realized value with
 the same replacement-level math (:mod:`features.player_value`), and reports
 how well each candidate ranking recovered the realized ordering — alongside
-the naive baselines the engine is built from (ESPN projection, prior-year
-pace) and the league's own draft.
+the prior-year-pace baseline and the league's own draft. ESPN forecasts are
+excluded: a completed season's forecast is fetched after the fact, and the
+inputs carry no capture time to prove it was known preseason.
 
 Pure DataFrame code, no network access. See ``docs/predictive_engine.md``.
 """
@@ -33,10 +34,16 @@ SUMMARY_COLUMNS = [
 
 def preseason_inputs(inputs_df):
     """Strip current-season columns so the engine sees only what it would have
-    known before opening night (prior-year pace + ESPN projection)."""
+    known before opening night (prior-year pace).
+
+    ESPN forecasts are stripped too: inputs carry no capture time, and a
+    completed season's forecast is fetched after the fact, so it is look-ahead.
+    """
     df = inputs_df.copy()
     df["current_avg_points"] = np.nan
     df["current_games_played"] = 0
+    df["espn_proj_avg_points"] = np.nan
+    df["espn_projection_verified"] = False
     return df
 
 
@@ -241,13 +248,11 @@ def run_preseason_backtest(inputs_df, league_size, draft_df=None,
     realized_pg = realized[realized["games_played"] >= min_games_per_game]
 
     by_id = inputs_df.set_index("player_id")
-    espn = by_id["espn_proj_avg_points"].copy()
-    verified = by_id.get("espn_projection_verified", pd.Series(False, index=by_id.index)).fillna(False)
-    espn = espn.mask(espn.eq(0) & ~verified.astype(bool))
+    # No ESPN candidate: forecasts fetched for a completed season are not
+    # pre-season knowledge (see preseason_inputs).
     candidates = {
         "engine_vorp": board.set_index("player_id")["vorp_ros"],
         "engine_ppg": board.set_index("player_id")["proj_pts_per_game"],
-        "espn_proj": espn,
         "prior_ppg": by_id["prior_avg_points"],
     }
     if draft_df is not None and len(draft_df):
@@ -257,7 +262,8 @@ def run_preseason_backtest(inputs_df, league_size, draft_df=None,
         ranking_benchmark(candidates, realized, targets=("realized_vorp_ros",)),
         ranking_benchmark(candidates, realized_pg, targets=("realized_vorp_per_game",)),
     ], ignore_index=True)
-    misses = biggest_misses(board, realized, inputs_df)
+    # The inputs the engine actually saw: no post-season ESPN forecast.
+    misses = biggest_misses(board, realized, engine_inputs)
 
     if output_dir is not None:
         output_dir.mkdir(parents=True, exist_ok=True)
