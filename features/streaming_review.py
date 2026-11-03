@@ -36,32 +36,70 @@ def _shortlist(result):
     return plans
 
 
-def _request(payload, model, key):
+class ModelRequestError(ValueError):
+    """Safe diagnostic metadata; never includes response bodies or HTTP headers."""
+
+    def __init__(self, code, *, http_status=None, stop_reason=None):
+        super().__init__(code)
+        self.diagnostic = {"code": code}
+        if type(http_status) is int and 100 <= http_status <= 599:
+            self.diagnostic["http_status"] = http_status
+        if stop_reason is not None:
+            self.diagnostic["stop_reason"] = (stop_reason if isinstance(stop_reason, str) and
+                stop_reason in {"end_turn", "max_tokens", "stop_sequence", "tool_use",
+                                "pause_turn", "refusal", "model_context_window_exceeded"}
+                else "unknown")
+
+
+def _request(payload, model, key, *, diagnostics=None):
     headers = {"x-api-key": key, "anthropic-version": "2023-06-01",
                "content-type": "application/json"}
     workspace = os.environ.get("ANTHROPIC_WORKSPACE_ID")
     if workspace:
         headers["anthropic-workspace-id"] = workspace
     # One attempt, no redirects or retries. Never log headers or response bodies.
-    with requests.post("https://api.anthropic.com/v1/messages", headers=headers,
-                       json={"model": model, "max_tokens": MAX_OUTPUT_TOKENS,
-                             "system": SYSTEM, "messages": [{"role": "user", "content": payload}]},
-                       timeout=(5, 20), allow_redirects=False, stream=True) as response:
-        if response.status_code != 200:
-            raise ValueError("Model service returned an error")
-        chunks, size = [], 0
-        for chunk in response.iter_content(4096):
-            size += len(chunk)
-            if size > MAX_RESPONSE_BYTES:
-                raise ValueError("Model response exceeded size bound")
-            chunks.append(chunk)
-        body = json.loads(b"".join(chunks))
-    if not isinstance(body, dict) or body.get("stop_reason") != "end_turn":
-        raise ValueError("Model response was incomplete")
+    status = None
+    try:
+        with requests.post("https://api.anthropic.com/v1/messages", headers=headers,
+                           json={"model": model, "max_tokens": MAX_OUTPUT_TOKENS,
+                                 "system": SYSTEM, "messages": [{"role": "user", "content": payload}]},
+                           timeout=(5, 20), allow_redirects=False, stream=True) as response:
+            status = response.status_code
+            if diagnostics is not None and type(status) is int and 100 <= status <= 599:
+                diagnostics["http_status"] = status
+            if status != 200:
+                raise ModelRequestError("http_error", http_status=status)
+            chunks, size = [], 0
+            for chunk in response.iter_content(4096):
+                size += len(chunk)
+                if size > MAX_RESPONSE_BYTES:
+                    raise ModelRequestError("response_too_large", http_status=status)
+                chunks.append(chunk)
+            try:
+                body = json.loads(b"".join(chunks))
+            except (ValueError, UnicodeError):
+                raise ModelRequestError("invalid_envelope_json", http_status=status) from None
+    except requests.RequestException:
+        # Transport failures can occur after acceptance; never imply no request/billing.
+        raise ModelRequestError("transport_error", http_status=status) from None
+    if not isinstance(body, dict):
+        raise ModelRequestError("invalid_envelope_shape", http_status=status)
+    if diagnostics is not None and isinstance(body.get("usage"), dict):
+        diagnostics["usage"] = {k: v for k, v in body["usage"].items()
+            if k in {"input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"}
+            and type(v) is int and 0 <= v <= 1000000000}
+    if body.get("stop_reason") != "end_turn":
+        raise ModelRequestError("incomplete_response", http_status=status,
+                                stop_reason=body.get("stop_reason"))
     content = body.get("content", [])
-    if not isinstance(content, list) or len(content) != 1 or not isinstance(content[0], dict) or content[0].get("type") != "text":
-        raise ValueError("Expected one text response")
-    return json.loads(content[0]["text"])
+    if (not isinstance(content, list) or len(content) != 1 or
+            not isinstance(content[0], dict) or content[0].get("type") != "text" or
+            not isinstance(content[0].get("text"), str)):
+        raise ModelRequestError("unsupported_content_shape", http_status=status)
+    try:
+        return json.loads(content[0]["text"])
+    except (ValueError, UnicodeError):
+        raise ModelRequestError("invalid_answer_json", http_status=status) from None
 
 
 def _validate(answer, plans, evidence, snapshot):
@@ -152,6 +190,8 @@ def review_plans(result, context, *, enabled=False, model=None):
         if len((SYSTEM + encoded).encode("utf-8")) > MAX_INPUT_BYTES:
             return dict(fallback, status="input_bound_exceeded")
         answer = _validate(_request(encoded, model, key), plans, evidence, result["snapshot"])
+    except ModelRequestError as exc:
+        return dict(fallback, status="error_or_invalid_output", request_diagnostic=exc.diagnostic)
     except (requests.RequestException, ValueError, TypeError, KeyError, OverflowError):
         # Never echo exceptions: HTTP errors can contain request headers or source text.
         return dict(fallback, status="error_or_invalid_output")

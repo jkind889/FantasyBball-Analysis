@@ -34,6 +34,15 @@ key may also require `ANTHROPIC_WORKSPACE_ID`. This feature does not configure
 credentials. No live or paid Claude request was used for implementation validation.
 Model availability and live authentication are unverified.
 
+Failed requests retain bounded `request_diagnostic` metadata in the fallback:
+a stable error code, HTTP status when received, and an allowlisted stop reason
+when relevant. Codes distinguish transport/HTTP failures, response size,
+envelope JSON/shape, truncation, content shape and answer JSON. Response bodies,
+headers, provider error messages and credentials are never included. The adapter
+still accepts exactly one text block and does not retry or relax validation.
+A transport or response-validation failure does not prove that generation or
+billing did not occur; inspect service-side usage before approving a retry.
+
 ## Budgets, legality, and search bounds
 
 - The provider adapter calculates matchup and season remaining allowances

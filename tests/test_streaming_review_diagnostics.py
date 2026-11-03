@@ -1,0 +1,113 @@
+"""Offline transport diagnostics; all requests are mocked and contain invented data."""
+import json
+import os
+import unittest
+from unittest.mock import Mock, patch
+
+import requests
+from features.streaming_review import ModelRequestError, _request, review_plans
+
+
+class RequestDiagnosticsTests(unittest.TestCase):
+    def response(self, raw=None, status=200):
+        response = Mock(status_code=status)
+        response.__enter__ = Mock(return_value=response)
+        response.__exit__ = Mock(return_value=False)
+        response.iter_content.return_value = [raw if raw is not None else json.dumps(
+            {"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"ok":true}'}]}).encode()]
+        return response
+
+    def failure(self, response, code, **extra):
+        with patch.dict(os.environ, {}, clear=True), patch(
+                'features.streaming_review.requests.post', return_value=response) as post:
+            with self.assertRaises(ModelRequestError) as caught:
+                _request('private fixture payload', 'fixture-model', 'fixture-secret')
+            post.assert_called_once()
+            self.assertFalse(post.call_args.kwargs['allow_redirects'])
+            self.assertEqual(caught.exception.diagnostic, {'code':code, 'http_status':response.status_code, **extra})
+            self.assertEqual(str(caught.exception), code)
+            self.assertNotIn('fixture-secret', json.dumps(caught.exception.diagnostic))
+            self.assertNotIn('private', json.dumps(caught.exception.diagnostic))
+        return caught.exception
+
+    def test_http_rejections_retain_status_without_reading_private_body(self):
+        for status in (400, 401, 404, 429, 500, 302):
+            with self.subTest(status=status):
+                response = self.response(b'private error details fixture-secret', status)
+                self.failure(response, 'http_error')
+                response.iter_content.assert_not_called()
+
+    def test_invalid_transport_json_is_distinguished_from_answer_json(self):
+        self.failure(self.response(b'private invalid envelope'), 'invalid_envelope_json')
+        body = {'stop_reason':'end_turn','content':[{'type':'text','text':'private invalid answer'}]}
+        self.failure(self.response(json.dumps(body).encode()), 'invalid_answer_json')
+
+    def test_invalid_utf8_does_not_escape_or_echo_content(self):
+        self.failure(self.response(b'\xffprivate'), 'invalid_envelope_json')
+
+    def test_invalid_envelope_shape_has_separate_code(self):
+        self.failure(self.response(b'[]'), 'invalid_envelope_shape')
+
+    def test_truncation_retains_safe_stop_reason(self):
+        self.failure(self.response(b'{"stop_reason":"max_tokens"}'), 'incomplete_response', stop_reason='max_tokens')
+
+    def test_unknown_stop_reason_is_redacted(self):
+        self.failure(self.response(b'{"stop_reason":"private fixture-secret"}'), 'incomplete_response', stop_reason='unknown')
+
+    def test_multiple_blocks_still_fail_closed(self):
+        body = {'stop_reason':'end_turn','content':[{'type':'thinking','thinking':'private'}, {'type':'text','text':'{}'}]}
+        self.failure(self.response(json.dumps(body).encode()), 'unsupported_content_shape')
+
+    def test_non_string_or_missing_text_is_diagnosed(self):
+        for block in ({'type':'text'}, {'type':'text','text':3}, 'private'):
+            self.failure(self.response(json.dumps({'stop_reason':'end_turn','content':[block]}).encode()), 'unsupported_content_shape')
+
+    def test_oversized_response_is_distinguished(self):
+        self.failure(self.response(b'x'*32001), 'response_too_large')
+
+    def test_transport_error_without_response_does_not_imply_no_billing(self):
+        with patch('features.streaming_review.requests.post', side_effect=requests.Timeout('private fixture-secret')) as post:
+            with self.assertRaises(ModelRequestError) as caught:
+                _request('{}','fixture','fixture-secret')
+            self.assertEqual(caught.exception.diagnostic, {'code':'transport_error'})
+            self.assertIsNone(caught.exception.__cause__)
+            self.assertTrue(caught.exception.__suppress_context__)
+            post.assert_called_once()
+
+    def test_stream_failure_preserves_received_http_status(self):
+        response = self.response()
+        response.iter_content.side_effect = requests.ConnectionError('private fixture-secret')
+        self.failure(response, 'transport_error')
+
+    def test_optional_diagnostics_capture_only_safe_usage_fields(self):
+        body={'stop_reason':'end_turn','usage':{'input_tokens':100,'output_tokens':20,
+              'cache_read_input_tokens':False,'private':'fixture-secret'},
+              'content':[{'type':'text','text':'{"ok":true}'}]}
+        diagnostics={}
+        with patch('features.streaming_review.requests.post',return_value=self.response(json.dumps(body).encode())):
+            self.assertEqual(_request('{}','fixture','fixture-secret',diagnostics=diagnostics), {'ok':True})
+        self.assertEqual(diagnostics, {'http_status':200,'usage':{'input_tokens':100,'output_tokens':20}})
+
+    def test_success_keeps_existing_return_contract(self):
+        with patch('features.streaming_review.requests.post', return_value=self.response()) as post:
+            self.assertEqual(_request('{}','fixture','fixture-secret'), {'ok':True})
+            post.assert_called_once()
+
+    def test_review_fallback_keeps_safe_request_diagnostic(self):
+        # All domain helpers mocked: this test checks only error propagation.
+        result={'deterministic_plan_id':'hold','snapshot':{'players':[], 'as_of':'fixture','rules':{}},'limitations':[]}
+        plans=[{'plan_id':'hold','actions':[],'calendar':[]},{'plan_id':'fixture','actions':[],'calendar':[]}]
+        context={'entries':[],'coverage':[],'limitations':[]}
+        with patch.dict(os.environ, {'ANTHROPIC_API_KEY':'fixture-secret'}, clear=True), \
+                patch('features.streaming_review._shortlist', return_value=plans), \
+                patch('features.streaming_review.validate_plan'), \
+                patch('features.streaming_review._request', side_effect=ModelRequestError('http_error',http_status=404)):
+            review=review_plans(result,context,enabled=True,model='fixture')
+        self.assertEqual(review['status'],'error_or_invalid_output')
+        self.assertEqual(review['selected_plan_id'],'hold')
+        self.assertEqual(review['request_diagnostic'], {'code':'http_error','http_status':404})
+        self.assertNotIn('fixture-secret',json.dumps(review))
+
+
+if __name__=='__main__':
+    unittest.main()
