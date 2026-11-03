@@ -115,6 +115,10 @@ def optimize_lineup(roster, context, rules, forms, add=None, drop=None,
                 continue
             if not game:
                 continue
+            # Before the lock check: a pending add holds no roster slot to lock.
+            if add and pid == add["player_id"] and game["tipoff"] <= effective:
+                row["reason"] = "pending acquisition / missed lock"
+                continue
             if day == today and game["tipoff"] <= now:
                 row["reason"] = "locked / already started"
                 slot = p.get("lineup_slot")
@@ -125,9 +129,6 @@ def optimize_lineup(roster, context, rules, forms, add=None, drop=None,
                     row["slot"] = slot
                 elif slot not in {"BE", "IR"}:
                     issues.append(f"Unknown locked slot: {p['player_name']}")
-                continue
-            if add and pid == add["player_id"] and game["tipoff"] <= effective:
-                row["reason"] = "pending acquisition / missed lock"
                 continue
             if game.get("status") in {"FINAL", "IN_PROGRESS"}:
                 row["reason"] = "already started"

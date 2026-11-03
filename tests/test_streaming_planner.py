@@ -424,5 +424,30 @@ class ContextAndReviewTests(unittest.TestCase):
                 self.assertEqual(review_plans(self.result, self.context, enabled=True, model="fixture")["status"], "error_or_invalid_output")
 
 
+class PendingAcquisitionLockTests(unittest.TestCase):
+    def test_same_day_add_after_tipoff_is_pending_not_unknown_locked_slot(self):
+        from features.streaming_planner import _evaluate, _move_time, _prepare
+        s = sequence_snapshot()
+        s["as_of"] = "2026-01-15T19:30:00-05:00"  # games on the 15th have tipped off
+        for p in s["players"]:
+            p["available_at"] = s["as_of"]
+        for g in s["games"]:
+            if g["tipoff"].startswith("2026-01-15"):
+                g["status"] = "IN_PROGRESS"
+        s["players"].append(dict(s["players"][2], player_id=4, player_name="Late FA", pro_team="CHI"))
+        for log in list(s["game_logs"]):
+            if log["player_id"] == 3:
+                s["game_logs"].append(dict(log, player_id=4, game_id="4" + log["game_id"]))
+        s["rules"]["roster_capacity"] = 2
+        prep = _prepare(s)
+        players = {p["player_id"]: p for p in prep[0]["players"]}
+        effective = _move_time(players[4], None, "2026-01-15", prep[4], prep[1])
+        result = _evaluate(prep, [{"date": "2026-01-15", "add_id": 4, "drop_id": None,
+                                   "effective_at": effective.isoformat()}])
+        self.assertEqual(result["issues"], [])
+        today = [r for r in result["calendar"] if r["player_id"] == 4 and r["date"] == "2026-01-15"]
+        self.assertEqual([r["reason"] for r in today], ["pending acquisition / missed lock"])
+
+
 if __name__ == "__main__":
     unittest.main()
