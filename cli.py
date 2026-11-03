@@ -46,6 +46,8 @@ def build_parser():
     parser.add_argument("--streaming-plan", action="store_true", help="plan a bounded sequence of current-matchup acquisitions")
     parser.add_argument("--max-moves", type=int, choices=range(4), help="streaming search depth, 0-3 (default 2)")
     parser.add_argument("--streaming-context", type=Path, help="dated injury/opponent context JSON")
+    parser.add_argument("--streaming-news", action="store_true",
+                        help="add recent ESPN injury blurbs to the context (network; no cookies sent)")
     parser.add_argument("--claude-review", action="store_true", help="opt in to one bounded Claude comparison request")
     parser.add_argument("--claude-model", help="explicit Claude model ID for optional review")
     parser.add_argument("--interactive", action="store_true",
@@ -63,8 +65,10 @@ def validate_args(parser, args):
             parser.error("Draft capture does not accept --team or --week")
     if args.streaming_plan and (args.mode != "waivers" or args.basic_waivers or args.historical_date):
         parser.error("--streaming-plan requires roster-aware waivers or a saved snapshot; historical demos are unsupported")
-    if (args.max_moves is not None or args.streaming_context or args.claude_review or args.claude_model) and not args.streaming_plan:
+    if (args.max_moves is not None or args.streaming_context or args.streaming_news or args.claude_review or args.claude_model) and not args.streaming_plan:
         parser.error("Streaming options require --streaming-plan")
+    if args.streaming_news and args.snapshot:
+        parser.error("--streaming-news cannot be combined with --snapshot; replays stay offline, so pass the exported streaming_context.json")
     if (args.snapshot or args.waiver_config or args.protect or args.basic_waivers or args.recent_window is not None or args.historical_date) and args.mode != "waivers":
         parser.error("Waiver options require --mode waivers")
     if args.basic_waivers and (args.snapshot or args.waiver_config or args.protect or args.recent_window is not None or args.historical_date):
@@ -194,6 +198,8 @@ def interactive_argv():
         option("--max-moves", "Maximum acquisitions (0–3)", default=2,
                convert=lambda v: _integer(v, minimum=0, maximum=3))
         option("--streaming-context", "Dated context JSON path (Enter for none)", convert=_file, optional=True)
+        if choice == 5 and _ask("Add recent ESPN injury news (network, no cookies)? (y/n)", default="n", convert=_yes_no):
+            argv.append("--streaming-news")
         if _ask("Request one Claude comparison (may incur API charges)? (y/n)", default="n", convert=_yes_no):
             argv.append("--claude-review")
             option("--claude-model", "Claude model ID (uses your configured API credentials)", convert=_model)

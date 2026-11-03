@@ -83,9 +83,10 @@ billing did not occur; inspect service-side usage before approving a retry.
 
 ## Dated context input
 
-No automatic injury-news or opponent-history feed is added. The existing snapshot
-provides opponents, game dates, and injury status. Additional evidence uses this
-explicit interface (synthetic example; IDs must exist in the supplied snapshot):
+No opponent-history feed is added. The existing snapshot provides opponents, game
+dates, and injury status. ESPN injury news is available with
+[`--streaming-news`](#espn-injury-news). Other evidence uses this explicit interface
+(synthetic example; IDs must exist in the supplied snapshot):
 
 ```json
 {
@@ -124,9 +125,52 @@ old report. Freshness is measured against the decision snapshot: injury evidence
 expires after 24 hours, matchup evidence after 7 days. Future observations and
 opponents absent from the remaining schedule are excluded from review. Matchup
 sample windows must end by the observation time. Small samples are descriptive,
-not established causal matchup advantages. Sources and content are caller supplied
-and not independently verified. Missing/stale evidence is exported explicitly.
+not established causal matchup advantages. Sources and content are supplied and not
+independently verified. Missing/stale evidence is exported explicitly.
 Files are limited to 64 KiB / 100 entries; summaries and sources to 500 characters.
+Entries may also carry `retrieved_at` (timezone-aware) and `source_item_id` (at most
+64 characters) to keep a provider's own item ID and the retrieval time.
+
+### ESPN injury news
+
+`--streaming-news` (live runs only) adds recent injury blurbs to this context using
+`features/player_news.py`. It is off by default and is also offered in the menu.
+
+- **Requests:** one per player, without cookies, bounded by timeout and response size.
+  Players in candidate moves come first, then the roster, up to 40 players. A failed
+  request or feed is reported and never blocks planning.
+- **Filtering:** only `Rotowire` items tagged to that player are kept. Clips (`Media`,
+  or other types with `video`) and other items such as `Story` are dropped and counted.
+- **Injury routing:** a heuristic on the headline only. The marker must sit on the
+  player's own name, such as `Smith (ankle)` or `Smith underwent`, because story text
+  and later clauses often describe teammates. Blurbs can still be missed or misrouted.
+- **Time window:** published within the 24 hours before the decision snapshot, matching
+  the context freshness rule. Newer items are excluded rather than used in hindsight.
+  `observed_at` is ESPN's declared publish time; `retrieved_at` is when it was fetched.
+- **Budgets:** at most two blurbs per player, 240-character summaries and about 4 KB in
+  total. Caller-supplied entries always win. Everything trimmed is counted.
+- **Review input bound:** plans alone used about 11 KB of the review's 16 KB bound on a
+  one-day horizon and about 15 KB on a six-day horizon, and each player with fresh
+  evidence adds game rows. When the payload is too large, the review withholds news
+  from the lowest priority upward and reports the count as `evidence_trimmed`. Caller
+  evidence is never withheld, so a payload that is still too large skips the review as
+  `input_bound_exceeded`.
+
+News never changes projected points, rankings or deterministic plan selection. It only
+gives Claude dated evidence to cite. Without `--claude-review` it is exported but has no
+effect on selection. Important limits:
+
+- No blurb does not mean a player is healthy; the feed's coverage stays unknown.
+- A long absence last reported more than 24 hours ago is not news here. It relies on
+  the snapshot's injury status.
+- The endpoint is undocumented and can change. Its terms for storing blurbs or sending
+  them to a model were not reviewed; blurb text goes to Anthropic only with
+  `--claude-review`.
+
+Exports add `streaming_context.json` (always within the 64 KiB load limit, in compact
+form if needed) and a `news` section in `streaming_plan.json` with
+per-player counts. Replays stay offline, so `--streaming-news` is rejected with
+`--snapshot`. Pass the exported context with `--streaming-context` to reproduce a run.
 
 ## Claude boundaries and fallback
 

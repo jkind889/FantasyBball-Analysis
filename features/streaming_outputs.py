@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from features.streaming_context import normalize_context
+from features.player_news import MAX_NEWS_PLAYERS, NEWS_ENDPOINT, select_news_entries
+from features.streaming_context import dump_context, merge_context_entries, normalize_context
 from features.streaming_planner import plan_streaming
 from features.streaming_review import review_plans
 
@@ -89,9 +90,40 @@ def _blocking_lines(result, players):
     return lines
 
 
+def news_priority(result):
+    """Players in candidate moves first (usable plans before partial), then the roster."""
+    ordered = sorted(result["plans"], key=lambda p: p["status"] != "available")
+    ids = [pid for plan in ordered for action in plan["actions"] for pid in (action["add_id"], action["drop_id"])]
+    ids += [p["player_id"] for p in result["snapshot"]["players"] if p.get("rostered")]
+    return list(dict.fromkeys(pid for pid in ids if pid is not None))
+
+
+def add_player_news(result, document, news_fetcher):
+    """Add dated injury blurbs to the context; a news failure never blocks planning."""
+    snapshot = result["snapshot"]
+    normalize_context(snapshot, document)  # Reject a bad caller file before any request.
+    priority = news_priority(result)
+    requested = priority[:MAX_NEWS_PLAYERS]
+    news = {"endpoint": NEWS_ENDPOINT, "status": "ok", "requested": len(requested),
+            "not_requested": len(priority) - len(requested), "entries_added": 0, "entries_dropped": 0, "players": [],
+            "limitations": ["ESPN's news feed is undocumented; published times are source-declared",
+                            "Injury blurbs are chosen by a headline heuristic and can be missed or misrouted",
+                            "No blurb does not mean a player is healthy; news older than 24 hours is not used"]}
+    try:
+        fetched = news_fetcher(requested)
+        names = {p["player_id"]: p.get("player_name") for p in snapshot["players"]}
+        entries, news["players"] = select_news_entries(fetched, names, as_of=snapshot["as_of"])
+    except Exception as exc:
+        return document, dict(news, status="error", error_type=type(exc).__name__)
+    document, news["entries_added"], news["entries_dropped"] = merge_context_entries(snapshot, document, entries)
+    return document, news
+
+
 def run_streaming(snapshot, *, max_moves=2, protected_ids=(), window=None,
-                  context_document=None, claude=False, model=None, output_dir=None):
+                  context_document=None, claude=False, model=None, output_dir=None, news_fetcher=None):
     result = plan_streaming(snapshot, max_moves=max_moves, protected_ids=protected_ids, window=window)
+    if news_fetcher is not None:
+        context_document, result["news"] = add_player_news(result, context_document, news_fetcher)
     result["context"] = normalize_context(result["snapshot"], context_document)
     result["review"] = review_plans(result, result["context"], enabled=claude, model=model)
     result["selected_plan_id"] = result["review"]["selected_plan_id"]
@@ -115,6 +147,22 @@ def summary_frame(result):
     return pd.DataFrame(rows)
 
 
+def _news_lines(news):
+    if news is None:
+        return []
+    if news["status"] != "ok":
+        return [f"ESPN news: unavailable ({news['error_type']}); no news context was added."]
+    rows = news["players"]
+    trimmed = sum(r["trimmed"] for r in rows) + news["entries_dropped"]
+    return [f"ESPN news: requested {news['requested']} players ({news['not_requested']} over the request limit); "
+            f"{sum(r['status'] != 'ok' for r in rows)} failed; dropped {sum(r['clips'] for r in rows)} clips and "
+            f"{sum(r['other_types'] for r in rows)} other items; added {news['entries_added']} injury blurbs from the last "
+            f"24 hours ({trimmed} over limits, {sum(r['older_injury_blurbs'] for r in rows)} older, "
+            f"{sum(r['future_injury_blurbs'] for r in rows)} newer than the snapshot and not used; "
+            f"{sum(r['name_missing'] for r in rows)} players without a name could not be checked).",
+            *news["limitations"]]
+
+
 def explanation(result):
     review = result["review"]
     lines = [f"As of {result['snapshot']['as_of']} | team {result['snapshot']['team_id']} | matchup {result['snapshot']['week']}"]
@@ -123,6 +171,8 @@ def explanation(result):
     else:
         lines.append(f"Fallback selection: {result['selected_plan_id']} (HOLD). No evidence-complete plan; this is not a recommendation.")
     lines.append(f"Claude review: {review['status']}. {REVIEW_STATUS_TEXT.get(review['status'], review['explanation'])}")
+    if review.get("evidence_trimmed"):
+        lines.append(f"  {review['evidence_trimmed']} lowest-priority ESPN news items were withheld from the review to fit its input limit.")
     if review.get("request_diagnostic"):
         diag = review["request_diagnostic"]
         lines.append("  Request diagnostic: " + "; ".join(
@@ -170,6 +220,7 @@ def explanation(result):
     statuses = pd.Series([e["status"] for e in result["context"]["entries"]], dtype=object).value_counts().to_dict()
     if statuses:
         lines.append("Supplied context entries: " + "; ".join(f"{status}={count}" for status, count in sorted(statuses.items())) + ".")
+    lines.extend(_news_lines(result.get("news")))
     lines.extend(result["limitations"] + result["context"]["limitations"])
     return "\n".join(lines) + "\n"
 
@@ -183,3 +234,9 @@ def write_streaming(result, output_dir):
     (path / "streaming_plan.json").write_text(json.dumps(result, indent=2, allow_nan=False) + "\n")
     (path / "streaming_snapshot.json").write_text(json.dumps(result["snapshot"], indent=2, allow_nan=False) + "\n")
     (path / "streaming_review.txt").write_text(explanation(result))
+    if result.get("news"):
+        # Replays are offline: this file reproduces the same context without ESPN.
+        snapshot = result["snapshot"]
+        document = {"schema_version": 1, **{key: snapshot.get(key) for key in ("league_id", "season_year", "week")},
+                    "entries": [{k: v for k, v in e.items() if k != "status"} for e in result["context"]["entries"]]}
+        (path / "streaming_context.json").write_bytes(dump_context(document))

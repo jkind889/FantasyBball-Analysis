@@ -68,6 +68,9 @@ if args.streaming_plan:
     streaming_options = {"max_moves": args.max_moves if args.max_moves is not None else 2,
                          "context_document": context_document, "claude": args.claude_review,
                          "model": args.claude_model}
+    if args.streaming_news:
+        from features.player_news import fetch_player_news
+        streaming_options["news_fetcher"] = fetch_player_news
 
 if args.output_dir:
     RESULTS_DIR = args.output_dir

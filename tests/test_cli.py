@@ -77,7 +77,7 @@ class CliTest(unittest.TestCase):
                     self.assertEqual(args.season, 2026)
 
     def test_streaming_claude_opt_in_and_typed_model(self):
-        args, output = self.menu(["5", "3", "", "5", "12, 34", "", "0", "", "y",
+        args, output = self.menu(["5", "3", "", "5", "12, 34", "", "0", "", "", "y",
                                   "", "two words", "fixture-model-v2", "my reports", "y"])
         self.assertTrue(args.streaming_plan)
         self.assertTrue(args.claude_review)
@@ -88,11 +88,22 @@ class CliTest(unittest.TestCase):
         self.assertIn("'my reports'", output)
 
     def test_streaming_defaults_never_enable_claude(self):
-        args, _ = self.menu(["5", "3", "", "", "", "", "", "", "", "", "y"])
+        args, _ = self.menu(["5", "3", "", "", "", "", "", "", "", "", "", "y"])
         self.assertEqual(args.max_moves, 2)
+        self.assertFalse(args.streaming_news)
         self.assertIsNone(args.recent_window)
         self.assertFalse(args.claude_review)
         self.assertIsNone(args.claude_model)
+
+    def test_streaming_news_is_opt_in_and_stays_out_of_replays(self):
+        args, _ = self.menu(["5", "3", "", "", "", "", "", "", "y", "", "", "y"])
+        self.assertTrue(args.streaming_news)
+        self.assertTrue(parse_args(["--mode", "waivers", "--streaming-plan", "--streaming-news"])[1].streaming_news)
+        for argv in (["--mode", "waivers", "--streaming-news"],
+                     ["--mode", "waivers", "--streaming-plan", "--streaming-news", "--snapshot", "saved.json"]):
+            with self.subTest(argv=argv), redirect_stderr(StringIO()), self.assertRaises(SystemExit) as exc:
+                parse_args(argv)
+            self.assertEqual(exc.exception.code, 2)
 
     def test_invalid_inputs_reprompt(self):
         args, output = self.menu(["oops", "9", "8", "-1", "3", "2026-02-30", "2026-01-08",

@@ -165,41 +165,53 @@ def review_plans(result, context, *, enabled=False, model=None):
                if p.get("rostered") or any(a["add_id"] == p["player_id"] for plan in plans for a in plan["actions"])]
     relevant = {p["player_id"] for p in players}
     evidence = [e for e in context["entries"] if e["status"] == "fresh" and e["player_id"] in relevant]
-    affected = {pid for p in plans for a in p["actions"] for pid in (a["add_id"], a["drop_id"]) if pid is not None}
-    affected.update(e["player_id"] for e in evidence)
-    plan_inputs = []
-    for plan in plans:
-        record = {k: v for k, v in plan.items() if k not in {"calendar", "daily_budget"}}
-        # Show the actual dates/opponents credited by each alternative, not just
-        # a player's nominal schedule before acquisition or while benched.
-        record["usable_games_columns"] = ["date", "player_id", "opponent", "projected_points"]
-        record["usable_games"] = [[row.get(k) for k in record["usable_games_columns"]]
-                                  for row in plan["calendar"] if row.get("player_id") in affected
-                                  and row["reason"] == "recommended start"]
-        plan_inputs.append(record)
-    payload = {"as_of": result["snapshot"]["as_of"], "rules": result["snapshot"]["rules"],
-               "plans": plan_inputs,
-               "players": players, "fresh_context": evidence,
-               "context_coverage": [e for e in context["coverage"] if e["player_id"] in relevant],
-               "limitations": result["limitations"] + context["limitations"]}
-    diagnostics = {}
+    base_affected = {pid for p in plans for a in p["actions"] for pid in (a["add_id"], a["drop_id"]) if pid is not None}
+
+    def encode(supplied):
+        affected = base_affected | {e["player_id"] for e in supplied}
+        plan_inputs = []
+        for plan in plans:
+            record = {k: v for k, v in plan.items() if k not in {"calendar", "daily_budget"}}
+            # Show the actual dates/opponents credited by each alternative, not just
+            # a player's nominal schedule before acquisition or while benched.
+            record["usable_games_columns"] = ["date", "player_id", "opponent", "projected_points"]
+            record["usable_games"] = [[row.get(k) for k in record["usable_games_columns"]]
+                                      for row in plan["calendar"] if row.get("player_id") in affected
+                                      and row["reason"] == "recommended start"]
+            plan_inputs.append(record)
+        return json.dumps({"as_of": result["snapshot"]["as_of"], "rules": result["snapshot"]["rules"],
+                           "plans": plan_inputs, "players": players, "fresh_context": supplied,
+                           "context_coverage": [e for e in context["coverage"] if e["player_id"] in relevant],
+                           "limitations": result["limitations"] + context["limitations"]}, allow_nan=False)
+
+    def too_large(text):
+        # UTF-8 byte bound is a conservative input-token bound, including system text.
+        return len((SYSTEM + text).encode("utf-8")) > MAX_INPUT_BYTES
+
+    diagnostics, trimmed = {}, {}
     try:
         for plan in plans:
             validate_plan(result["snapshot"], plan)
-        encoded = json.dumps(payload, allow_nan=False)
-        # UTF-8 byte bound is a conservative input-token bound, including system text.
-        if len((SYSTEM + encoded).encode("utf-8")) > MAX_INPUT_BYTES:
-            return dict(fallback, status="input_bound_exceeded")
+        encoded = encode(evidence)
+        # Provider news is optional and last in priority order, so it yields first.
+        # Caller evidence is never dropped; if it alone is too large, the bound applies.
+        while too_large(encoded) and any("source_item_id" in e for e in evidence):
+            last = max(i for i, e in enumerate(evidence) if "source_item_id" in e)
+            evidence = evidence[:last] + evidence[last + 1:]
+            trimmed["evidence_trimmed"] = trimmed.get("evidence_trimmed", 0) + 1
+            encoded = encode(evidence)
+        if too_large(encoded):
+            return dict(fallback, status="input_bound_exceeded", **trimmed)
         answer = _validate(_request(encoded, model, key, diagnostics=diagnostics),
                            plans, evidence, result["snapshot"])
     except ModelRequestError as exc:
-        return dict(fallback, status="error_or_invalid_output",
+        return dict(fallback, status="error_or_invalid_output", **trimmed,
                     request_diagnostic={**diagnostics, **exc.diagnostic})
     except (requests.RequestException, ValueError, TypeError, KeyError, OverflowError):
         # Never echo exceptions: HTTP errors can contain request headers or source text.
         if diagnostics:
             # A response arrived (and may be billed) but its answer failed validation.
-            return dict(fallback, status="error_or_invalid_output",
+            return dict(fallback, status="error_or_invalid_output", **trimmed,
                         request_diagnostic={**diagnostics, "code": "answer_failed_validation"})
-        return dict(fallback, status="error_or_invalid_output")
-    return dict(answer, status="validated", explanation="Claude selected a supplied, independently validated plan")
+        return dict(fallback, status="error_or_invalid_output", **trimmed)
+    return dict(answer, status="validated", **trimmed, explanation="Claude selected a supplied, independently validated plan")
