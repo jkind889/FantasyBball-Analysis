@@ -461,6 +461,10 @@ def replay_draft(document, *, assume_forecasts_pre_draft=False):
                   "available_player_ids": remaining if availability_complete else None,
                   "observed_projection_value": scores[pid].get("observed_value") if metric == "projected_total_points" else None,
                   "selected_value": value, "selected_value_status": scores[pid]["status"],
+                  # Ranks, gaps and alternative values below share this timing basis.
+                  "value_timing_basis": (None if value is None and not (availability_complete and covered)
+                                         else "USER-ASSUMED pre-draft availability" if assume_forecasts_pre_draft
+                                         else "declared capture before cutoff"),
                   "selected_rank_among_covered_available": rank,
                   "selected_global_available_rank": rank if coverage_complete else None,
                   "best_covered_available_player_ids": [p for p in covered if scores[p]["value"] == best_value] if comparable else [],
@@ -492,7 +496,7 @@ def replay_draft(document, *, assume_forecasts_pre_draft=False):
                 "observed_numeric_forecast_count": sum(scores[p["player_id"]].get("observed_value") is not None for p in records),
                 "compared_pick_count": sum(c.get("status") == "compared" for c in cohort.values()),
                 "excluded_projection_count": sum(c.get("status") == "excluded_projection" for c in cohort.values()),
-                "interpretation": "Descriptive captured-value differences; no available-pool ranks, opportunity costs or pick-quality judgments. Unknown historical scoring, keepers and full player pool remain unknown."
+                "interpretation": "Cohort comparisons are descriptive captured-value differences; they carry no available-pool ranks, opportunity costs or pick-quality judgments. Any per-pick ranks or opportunity gaps elsewhere in this report rest on the USER-ASSUMED forecast timing (see value_timing_basis). Unknown historical scoring, keepers and full player pool remain unknown."
             } if assume_forecasts_pre_draft else None),
             "score_coverage": scores, "picks": records,
             "observed_final_rosters": {team: sorted(ids) for team, ids in sorted(owned.items())}}

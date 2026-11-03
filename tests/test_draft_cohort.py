@@ -123,6 +123,25 @@ class CapturedDraftedCohortTests(unittest.TestCase):
         d=fixture();d['rankings']['entries'][0]['value']=-1e308;d['rankings']['entries'][1]['value']=1e308
         with self.assertRaisesRegex(ValueError,'captured-cohort difference'):run(d)
 
+    def test_assumed_ranks_are_labeled_with_their_timing_basis(self):
+        strict=replay_draft(json.loads(EXAMPLE.read_text()))
+        self.assertEqual(strict['picks'][1]['value_timing_basis'],'declared capture before cutoff')
+        d=json.loads(EXAMPLE.read_text());d['rankings']['observed_at']='2026-04-20T00:00:00Z'
+        for e in d['rankings']['entries']:e.pop('observed_at',None)
+        late=replay_draft(deepcopy(d))['picks'][1]
+        self.assertIsNone(late['selected_rank_among_covered_available'])
+        self.assertIsNone(late['value_timing_basis'])
+        assumed=run(d)['picks'][1]
+        self.assertIsNotNone(assumed['selected_rank_among_covered_available'])
+        self.assertEqual(assumed['value_timing_basis'],'USER-ASSUMED pre-draft availability')
+        # A missing selected value must not hide the label on ranked alternatives.
+        for e in d['rankings']['entries']:
+            if e['player_id']=='p002':e['value']=None
+        unvalued=run(d)['picks'][1]
+        self.assertIsNone(unvalued['selected_value'])
+        self.assertTrue(any(a['rank_among_covered_available'] for a in unvalued['alternatives']))
+        self.assertEqual(unvalued['value_timing_basis'],'USER-ASSUMED pre-draft availability')
+
     def test_reordered_input_has_same_cohort_results(self):
         d=fixture();a=run(d);d['picks']['events'].reverse();d['rankings']['entries'].reverse();b=run(d)
         self.assertEqual(a['picks'],b['picks'])

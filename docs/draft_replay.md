@@ -229,7 +229,11 @@ therefore a null difference. All true capture timestamps remain in
 `score_coverage`; the result remains USER-ASSUMED and partial.
 
 Existing availability, historical scoring and roster calculations retain their
-original gates and fields. The strict default does not enable this cohort output.
+original gates and fields. When those gates pass in assumed mode, per-pick ranks,
+opportunity gaps and alternative values are computed from the assumed-available
+forecasts; each pick's `value_timing_basis` then reads `USER-ASSUMED pre-draft
+availability` (strict mode: `declared capture before cutoff`). It is null only
+when the pick has no computed selected value, rank or alternative value. The strict default does not enable this cohort output.
 `captured_drafted_cohort_summary` distinguishes raw forecast coverage, excluded
 projections and picks with a descriptive comparison. No new provider/model
 calls are made by the replay engine.
