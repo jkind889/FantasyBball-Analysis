@@ -176,3 +176,60 @@ assignment, bench overflow, deterministic replay, input immutability, and CLI
 output safety. These are implementation tests with synthetic data. Contextual
 evidence ingestion, semantic claim checks, Claude integration and the research
 pack's full model evaluation remain deferred.
+
+
+### Explicit user assumption about forecast timing
+
+Strict validation remains the default. For an explicitly requested sensitivity run:
+
+```sh
+venv/bin/python -B -m features.draft_replay input.json \
+  --assume-forecasts-pre-draft --output new-assumed-report.json
+```
+
+The Python equivalent is `replay_draft(document, assume_forecasts_pre_draft=True)`.
+This mode assumes only that supplied projected-total-point forecasts were available
+pre-draft. It preserves actual `observed_at` values, labels the output
+`user_assumed_forecasts_pre_draft`, records the assumption, and always keeps the
+report partial rather than presenting timing as verified history. Ordinal boards
+are not eligible for this override. Null cutoff/draft-start values remain unknown;
+no substitute dates are generated. Malformed timestamps still fail validation.
+
+The override does not certify rules, scoring compatibility, full player-pool
+coverage, positions, pick completeness or keepers. Those gaps can still suppress
+comparisons and roster fit. `score_coverage.observed_value` and each pick's
+`observed_projection_value` expose supplied values even when incompatible;
+`value` / `selected_value` remain null unless eligible for calculation. Observed
+values must never be presented as validated decision scores.
+
+### Captured drafted-cohort comparisons
+
+`--assume-forecasts-pre-draft` also adds a separate
+`captured_drafted_cohort_comparison` to each pick. This describes only captured
+forecast values for that selection versus later selections in the supplied pick
+log. It never calls those players available alternatives and excludes undrafted
+players even when their values appear in the input pool.
+
+Comparisons require matching source, actual capture instant, league, season,
+full-season horizon and declared scoring version (including an explicitly
+unknown version shared by both). Missing values, scope conflicts, missing
+source/capture metadata and invalid parent scope remain excluded. Equivalent
+UTC offsets refer to the same capture instant. Unknown historical scoring rules,
+keeper state, full player pool, draft timing, positions and roster shape remain
+unknown; they do not prevent this narrower descriptive arithmetic.
+
+The result reports the highest compatible later captured value, all recorded
+selections tied at that value, and `highest_later_captured_value_minus_selected`.
+This signed difference may be positive, zero or negative. It is not an
+opportunity cost, full available-player rank, roster-fit score or pick-quality
+judgment. Counts show later recorded picks, comparable picks and excluded picks.
+An incomplete log means only its observed records are compared; missing picks
+are never inferred. The final recorded selection has no later comparator and
+therefore a null difference. All true capture timestamps remain in
+`score_coverage`; the result remains USER-ASSUMED and partial.
+
+Existing availability, historical scoring and roster calculations retain their
+original gates and fields. The strict default does not enable this cohort output.
+`captured_drafted_cohort_summary` distinguishes raw forecast coverage, excluded
+projections and picks with a descriptive comparison. No new provider/model
+calls are made by the replay engine.

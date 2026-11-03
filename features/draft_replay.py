@@ -87,7 +87,7 @@ def _boolean(value, label):
     return value
 
 
-def _capture(section, cutoff, label):
+def _capture(section, cutoff, label, *, assume_pre_draft=False):
     """Validate supplied provenance; return reasons it cannot establish history."""
     source = _text(section.get("source"), f"{label}.source", nullable=True)
     observed = _time(section.get("observed_at"), f"{label}.observed_at", nullable=True)
@@ -96,13 +96,16 @@ def _capture(section, cutoff, label):
         reasons.append(f"{label}.source_missing")
     if observed is None:
         reasons.append(f"{label}.observed_at_missing")
-    elif observed >= cutoff:
+    elif cutoff is None and not assume_pre_draft:
+        reasons.append(f"{label}.cutoff_unknown")
+    elif not assume_pre_draft and observed >= cutoff:
         reasons.append(f"{label}.not_before_cutoff")
     return reasons
 
 
-def normalize_snapshot(document):
+def normalize_snapshot(document, *, assume_forecasts_pre_draft=False):
     """Validate without modifying the caller's input; missing history stays explicit."""
+    _boolean(assume_forecasts_pre_draft, "assume_forecasts_pre_draft")
     data = deepcopy(document)
     _object(data, {"schema_version", "snapshot_id", "league_id", "season_year", "cutoff_at",
                    "draft_started_at", "teams", "player_pool", "rankings", "rules", "picks",
@@ -116,11 +119,15 @@ def normalize_snapshot(document):
     _integer(data["season_year"], "season_year", 1900, 9999)
     if "synthetic" in data:
         _boolean(data["synthetic"], "synthetic")
-    cutoff = _time(data["cutoff_at"], "cutoff_at")
+    cutoff = _time(data["cutoff_at"], "cutoff_at", nullable=assume_forecasts_pre_draft)
     start = _time(data.get("draft_started_at"), "draft_started_at", nullable=True)
-    if start is not None and cutoff >= start:
+    if start is not None and cutoff is not None and cutoff >= start:
         raise ValueError("cutoff_at must be strictly before draft_started_at")
     missing = [] if start else ["draft_started_at_missing"]
+    if cutoff is None:
+        missing.append("cutoff_at_missing")
+    if assume_forecasts_pre_draft:
+        missing.append("forecast_timing_user_assumed")
     teams = {}
     for team in _list(data["teams"], "teams", 100):
         _object(team, {"team_id", "name"}, "team", {"team_id"})
@@ -228,7 +235,9 @@ def normalize_snapshot(document):
         _object(ranking, fields, "rankings", {"metric", "entries"})
         if not isinstance(ranking["metric"], str) or ranking["metric"] not in {"projected_total_points", "pre_draft_rank"}:
             raise ValueError("rankings.metric must be projected_total_points or pre_draft_rank")
-        ranking_reasons = _capture(ranking, cutoff, "rankings")
+        if assume_forecasts_pre_draft and ranking["metric"] != "projected_total_points":
+            raise ValueError("The pre-draft assumption supports projected_total_points only")
+        ranking_reasons = _capture(ranking, cutoff, "rankings", assume_pre_draft=assume_forecasts_pre_draft)
         for field, expected in [("season_year", data["season_year"]), ("league_id", data["league_id"]),
                                 ("horizon", "full_season"), ("scoring_version", scoring["version"] if scoring else None)]:
             value = ranking.get(field)
@@ -251,9 +260,9 @@ def normalize_snapshot(document):
                     _integer(value, "pre_draft_rank")
             combined = {**ranking, **entry}
             reasons = list(ranking_reasons) + rules_reasons
-            if start is None:
+            if start is None and not assume_forecasts_pre_draft:
                 reasons.append("draft_started_at_missing")
-            reasons.extend(_capture(combined, cutoff, "entry"))
+            reasons.extend(_capture(combined, cutoff, "entry", assume_pre_draft=assume_forecasts_pre_draft))
             if ranking["metric"] == "pre_draft_rank":
                 # Ordinal positions belong to one board, unlike comparable point units.
                 if combined.get("source") != ranking.get("source"):
@@ -268,7 +277,7 @@ def normalize_snapshot(document):
                     reasons.append(f"entry.{field}_incompatible")
             if scoring is None:
                 reasons.append("rules.scoring_missing")
-            scores[pid] = {"value": value if not reasons else None,
+            scores[pid] = {"observed_value": value, "value": value if not reasons else None,
                            "status": "incompatible" if reasons else ("missing_value" if value is None else "available"),
                            "limitations": sorted(set(reasons)),
                            "provenance": {k: combined.get(k) for k in ("source", "observed_at", "season_year", "league_id", "horizon", "scoring_version")}}
@@ -327,11 +336,84 @@ def _roster_state(ids, players, roster, complete, positions_verified):
     return result
 
 
-def replay_draft(document):
+def _captured_cohort(data, scores):
+    """Descriptive comparisons of recorded selections, never available alternatives.
+
+    A suffix accumulator keeps work bounded by draft size, independent of the
+    number of undrafted players. Only equal source/capture/scoring-scope groups
+    share arithmetic. Unknown historical rules remain unknown.
+    """
+    ranking = data.get("rankings")
+    if ranking is None:
+        return {}
+    parent_reasons = _capture(ranking, None, "rankings", assume_pre_draft=True)
+    for field, expected in (("league_id", data["league_id"]), ("season_year", data["season_year"]),
+                            ("horizon", "full_season")):
+        if ranking.get(field) != expected or (field == "season_year" and type(ranking.get(field)) is not int):
+            parent_reasons.append(f"rankings.{field}_missing_or_incompatible")
+    groups, result = {}, {}
+    events = data["picks"]["events"]
+    for index in range(len(events) - 1, -1, -1):
+        pick = events[index]
+        score = scores[pick["player_id"]]
+        provenance = score.get("provenance", {})
+        value = score.get("observed_value")
+        reasons = list(parent_reasons) + _capture(provenance, None, "entry", assume_pre_draft=True)
+        for field, expected in (("league_id", data["league_id"]), ("season_year", data["season_year"]),
+                                ("horizon", "full_season")):
+            actual = provenance.get(field)
+            if field == "league_id" and actual is not None:
+                actual = _id(actual, "entry.league_id")
+            if actual != expected or (field == "season_year" and type(actual) is not int):
+                reasons.append(f"entry.{field}_missing_or_incompatible")
+        version = provenance.get("scoring_version")
+        if version is not None and (not isinstance(version, str) or not version.strip()):
+            reasons.append("entry.scoring_version_invalid")
+        if value is None:
+            reasons.append("observed_value_missing")
+        key = None if reasons else (provenance["source"], _time(provenance["observed_at"], "entry.observed_at"),
+                                    data["league_id"], provenance["season_year"], provenance["horizon"], version)
+        later_count = len(events) - index - 1
+        group = groups.get(key) if key is not None else None
+        comparable_count = group["count"] if group else 0
+        difference = group["highest"] - value if group else None
+        if difference is not None:
+            _number(difference, "computed captured-cohort difference")
+        result[pick["player_id"]] = {
+            "status": ("excluded_projection" if reasons else "compared" if group else
+                       "no_later_recorded_picks" if later_count == 0 else "no_comparable_later_recorded_picks"),
+            "scope": "captured_later_recorded_draft_selections_only",
+            "timing_basis": "USER-ASSUMED pre-draft forecast availability; actual captures retained",
+            "availability_verified_by_this_comparison": False,
+            "historical_scoring_verified_by_this_comparison": False,
+            "selected_observed_value": value,
+            "selected_exclusion_reasons": sorted(set(reasons)),
+            "later_recorded_pick_count": later_count,
+            "comparable_later_recorded_pick_count": comparable_count,
+            "excluded_later_recorded_pick_count": later_count - comparable_count,
+            "highest_later_captured_value": group["highest"] if group else None,
+            "highest_later_captured_players": sorted(group["players"], key=lambda p: p["player_id"]) if group else [],
+            "highest_later_captured_value_minus_selected": difference,
+        }
+        if key is not None:
+            player = {"player_id": pick["player_id"], "overall_pick": pick["overall_pick"], "observed_value": value}
+            if group is None:
+                groups[key] = {"count": 1, "highest": value, "players": [player]}
+            else:
+                # New containers avoid mutating a prior pick's reported tie set.
+                groups[key] = {"count": group["count"] + 1,
+                               "highest": max(value, group["highest"]),
+                               "players": ([player] if value > group["highest"] else
+                                           group["players"] + [player] if value == group["highest"] else group["players"])}
+    return result
+
+
+def replay_draft(document, *, assume_forecasts_pre_draft=False):
     """Return deterministic per-pick facts, with no outcome data or prose judgment."""
-    data, players, scores, missing, pool_reasons, rules_reasons = normalize_snapshot(document)
+    data, players, scores, missing, pool_reasons, rules_reasons = normalize_snapshot(document, assume_forecasts_pre_draft=assume_forecasts_pre_draft)
     ranking = data.get("rankings")
     metric = ranking["metric"] if ranking else None
+    cohort = _captured_cohort(data, scores) if assume_forecasts_pre_draft else {}
     direction = -1 if metric == "projected_total_points" else 1
     roster = (data["rules"].get("roster") if data.get("rules") and not rules_reasons
               and data.get("draft_started_at") is not None else None)
@@ -377,6 +459,7 @@ def replay_draft(document):
                   "availability_complete": availability_complete,
                   "observed_remaining_player_ids": remaining,
                   "available_player_ids": remaining if availability_complete else None,
+                  "observed_projection_value": scores[pid].get("observed_value") if metric == "projected_total_points" else None,
                   "selected_value": value, "selected_value_status": scores[pid]["status"],
                   "selected_rank_among_covered_available": rank,
                   "selected_global_available_rank": rank if coverage_complete else None,
@@ -388,17 +471,29 @@ def replay_draft(document):
                   "roster_before": before, "roster_after": after,
                   "starting_slot_coverage_change": (after["starting_slots_filled"] - before["starting_slots_filled"]
                                                      if after["starting_slots_filled"] is not None and before["starting_slots_filled"] is not None else None)}
+        if assume_forecasts_pre_draft:
+            record["captured_drafted_cohort_comparison"] = cohort.get(pid)
         records.append(record)
         selected.add(pid)
     raw = json.dumps(document, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
     return {"schema_version": 1, "snapshot_id": data["snapshot_id"], "input_sha256": hashlib.sha256(raw).hexdigest(),
             "synthetic": data.get("synthetic", False), "league_id": data["league_id"], "season_year": data["season_year"],
             "cutoff_at": data["cutoff_at"], "draft_started_at": data.get("draft_started_at"),
+            "analysis_mode": "user_assumed_forecasts_pre_draft" if assume_forecasts_pre_draft else "strict",
+            "assumptions": (["USER-ASSUMED: captured forecast values were available pre-draft; actual capture times are preserved. This does not certify the player pool, rules, keeper status or draft timing."] if assume_forecasts_pre_draft else []),
             "status": "partial" if missing else "complete", "limitations": missing,
             "metric": metric, "value_unit": ("projected_points" if metric == "projected_total_points" else "source_rank_positions") if metric else None,
             "rank_policy": "competition rank; equal values share rank; stable player ID display order",
             "roster_scope": "Unique-player starting-slot coverage and bench capacity only; no numeric fit bonus or overall draft grade",
-            "provenance_scope": "Declared contemporaneous captures; hashes establish input identity, not historical authenticity",
+            "provenance_scope": ("Forecast timing is USER-ASSUMED, not historically verified; original captures retained" if assume_forecasts_pre_draft else "Declared contemporaneous captures; hashes establish input identity, not historical authenticity"),
+            "captured_drafted_cohort_summary": ({
+                "scope": "captured_later_recorded_draft_selections_only",
+                "recorded_pick_count": len(records),
+                "observed_numeric_forecast_count": sum(scores[p["player_id"]].get("observed_value") is not None for p in records),
+                "compared_pick_count": sum(c.get("status") == "compared" for c in cohort.values()),
+                "excluded_projection_count": sum(c.get("status") == "excluded_projection" for c in cohort.values()),
+                "interpretation": "Descriptive captured-value differences; no available-pool ranks, opportunity costs or pick-quality judgments. Unknown historical scoring, keepers and full player pool remain unknown."
+            } if assume_forecasts_pre_draft else None),
             "score_coverage": scores, "picks": records,
             "observed_final_rosters": {team: sorted(ids) for team, ids in sorted(owned.items())}}
 
@@ -440,9 +535,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("snapshot", type=Path, help="frozen draft JSON bundle")
     parser.add_argument("--output", type=Path, help="new JSON output file (default: stdout; existing files are preserved)")
+    parser.add_argument("--assume-forecasts-pre-draft", action="store_true",
+                        help="explicit user assumption about forecast timing only; preserves captures and all other validation")
     args = parser.parse_args(argv)
     try:
-        result = replay_draft(load_snapshot(args.snapshot))
+        result = replay_draft(load_snapshot(args.snapshot), assume_forecasts_pre_draft=args.assume_forecasts_pre_draft)
         text = json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n"
         if args.output:
             _write_report(args.output, text)

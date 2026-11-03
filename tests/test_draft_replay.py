@@ -310,5 +310,91 @@ class DraftReplayTests(unittest.TestCase):
             self.assertFalse(output.exists())
 
 
+    def test_assumption_preserves_late_capture_and_strict_default(self):
+        data = snapshot()
+        stamp = "2026-10-30T23:57:24.342957+00:00"
+        data["rankings"]["observed_at"] = stamp
+        for entry in data["rankings"]["entries"]:
+            entry["observed_at"] = stamp
+        original = deepcopy(data)
+        self.assertIsNone(replay_draft(data)["picks"][-1]["selected_value"])
+        report = replay_draft(data, assume_forecasts_pre_draft=True)
+        self.assertEqual(report["analysis_mode"], "user_assumed_forecasts_pre_draft")
+        self.assertIn("forecast_timing_user_assumed", report["limitations"])
+        self.assertEqual(report["status"], "partial")
+        self.assertEqual(report["picks"][-1]["opportunity_gap_among_covered"], 10)
+        self.assertEqual(report["score_coverage"]["p006"]["provenance"]["observed_at"], stamp)
+        self.assertEqual(data, original)
+
+    def test_unknown_cutoff_is_explicit_and_never_invented(self):
+        data = snapshot()
+        data["cutoff_at"] = data["draft_started_at"] = None
+        with self.assertRaisesRegex(ValueError, "cutoff_at"):
+            replay_draft(data)
+        report = replay_draft(data, assume_forecasts_pre_draft=True)
+        self.assertIsNone(report["cutoff_at"])
+        self.assertIsNone(report["draft_started_at"])
+        self.assertIn("cutoff_at_missing", report["limitations"])
+        self.assertIn("player_pool.cutoff_unknown", report["limitations"])
+        self.assertIsNone(report["picks"][-1]["opportunity_gap_among_covered"])
+
+    def test_assumption_does_not_waive_missing_rules_pool_or_keepers(self):
+        for section in ("rules", "keepers", "player_pool"):
+            data = snapshot()
+            if section == "player_pool":
+                data[section]["complete"] = False
+            else:
+                data[section] = None
+            report = replay_draft(data, assume_forecasts_pre_draft=True)
+            last = report["picks"][-1]
+            self.assertIsNone(last["opportunity_gap_among_covered"])
+            self.assertEqual(last["observed_projection_value"], 950)
+            if section == "rules":
+                self.assertIsNone(last["selected_value"])
+
+    def test_assumption_retains_provenance_and_compatibility_checks(self):
+        cases = [("source", None), ("observed_at", None), ("season_year", 2027),
+                 ("league_id", "wrong"), ("horizon", "rest_of_season"),
+                 ("scoring_version", None)]
+        for field, value in cases:
+            with self.subTest(field=field):
+                data = snapshot()
+                data["rankings"]["entries"][5][field] = value
+                report = replay_draft(data, assume_forecasts_pre_draft=True)
+                self.assertIsNone(report["picks"][-1]["selected_value"])
+                self.assertEqual(report["score_coverage"]["p006"]["observed_value"], 950)
+
+    def test_assumption_rejects_malformed_times_and_ordinal_boards(self):
+        for field, value in [("observed_at", "not a timestamp"), ("metric", "pre_draft_rank")]:
+            data = snapshot()
+            data["rankings"][field] = value
+            with self.assertRaises(ValueError):
+                replay_draft(data, assume_forecasts_pre_draft=True)
+        with self.assertRaisesRegex(ValueError, "true or false"):
+            replay_draft(snapshot(), assume_forecasts_pre_draft="yes")
+
+    def test_assumption_never_waives_late_pool_or_rules(self):
+        for section in ("rules", "player_pool"):
+            data = snapshot()
+            data[section]["observed_at"] = "2026-10-30T23:57:24Z"
+            report = replay_draft(data, assume_forecasts_pre_draft=True)
+            self.assertIn(section + ".not_before_cutoff", report["limitations"])
+            self.assertIsNone(report["picks"][-1]["opportunity_gap_among_covered"])
+
+    def test_assumption_cli_requires_explicit_flag(self):
+        with TemporaryDirectory() as directory:
+            source, output = Path(directory) / "input.json", Path(directory) / "report.json"
+            data = snapshot()
+            data["cutoff_at"] = None
+            source.write_text(json.dumps(data))
+            command = [sys.executable, "-B", "-m", "features.draft_replay", str(source), "--output", str(output)]
+            strict = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+            self.assertEqual(strict.returncode, 2)
+            self.assertFalse(output.exists())
+            assumed = subprocess.run(command + ["--assume-forecasts-pre-draft"], cwd=ROOT, capture_output=True, text=True)
+            self.assertEqual(assumed.returncode, 0, assumed.stderr)
+            self.assertEqual(json.loads(output.read_text())["analysis_mode"], "user_assumed_forecasts_pre_draft")
+
+
 if __name__ == "__main__":
     unittest.main()
