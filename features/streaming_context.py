@@ -9,25 +9,64 @@ import pandas as pd
 from features.recent_form import timestamp
 
 
+MAX_FILE_BYTES = 65536
+MAX_ENTRIES = 100
+
+
 def load_context(path):
     if path is None:
         return None
     with Path(path).open("rb") as source:
-        data = source.read(65537)
-    if len(data) > 65536:
+        data = source.read(MAX_FILE_BYTES + 1)
+    if len(data) > MAX_FILE_BYTES:
         raise ValueError("Streaming context must be at most 64 KiB")
     return json.loads(data)
 
 
+def _identity(snapshot):
+    return {key: snapshot.get(key) for key in ("league_id", "season_year", "week")}
+
+
+def _compact(document):
+    return json.dumps(document, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
+
+def dump_context(document):
+    """Readable JSON when it fits; otherwise compact, so load_context always accepts it."""
+    text = json.dumps(document, indent=2, ensure_ascii=False).encode("utf-8") + b"\n"
+    return text if len(text) <= MAX_FILE_BYTES else _compact(document)
+
+
+def merge_context_entries(snapshot, document, entries):
+    """Append provider entries to a caller document; the merged file stays loadable.
+
+    Caller entries always win: colliding IDs and over-limit provider entries are
+    dropped and counted. Returns (document, added, dropped).
+    """
+    base = document if document is not None else {"schema_version": 1, **_identity(snapshot), "entries": []}
+    merged = list(base["entries"])
+    seen, added, dropped = {e["id"] for e in merged}, 0, 0
+    for entry in entries:
+        candidate = merged + [entry]
+        if (entry["id"] in seen or len(candidate) > MAX_ENTRIES
+                or len(_compact(dict(base, entries=candidate))) > MAX_FILE_BYTES):
+            dropped += 1
+            continue
+        merged = candidate
+        seen.add(entry["id"])
+        added += 1
+    return dict(base, entries=merged), added, dropped
+
+
 def normalize_context(snapshot, document=None):
-    identity = {key: snapshot.get(key) for key in ("league_id", "season_year", "week")}
+    identity = _identity(snapshot)
     document = document if document is not None else {"schema_version": 1, **identity, "entries": []}
     if not isinstance(document, dict) or set(document) != {"schema_version", "entries", *identity} or document["schema_version"] != 1:
         raise ValueError("Context requires schema_version: 1, league_id, season_year, week and entries")
     if any(document[key] != value for key, value in identity.items()):
         raise ValueError("Context league, season and matchup must match the decision snapshot")
     entries = document["entries"]
-    if not isinstance(entries, list) or len(entries) > 100:
+    if not isinstance(entries, list) or len(entries) > MAX_ENTRIES:
         raise ValueError("Context permits at most 100 entries")
     now = timestamp(snapshot["as_of"])
     players = {p["player_id"]: p for p in snapshot["players"]}
@@ -45,7 +84,7 @@ def normalize_context(snapshot, document=None):
     required = {"id", "kind", "player_id", "observed_at", "source", "summary"}
     for entry in entries:
         if not isinstance(entry, dict) or not required <= set(entry) or set(entry) - required - {
-            "opponent", "sample_games", "window_start", "window_end"}:
+            "opponent", "sample_games", "window_start", "window_end", "retrieved_at", "source_item_id"}:
             raise ValueError("Invalid context entry fields")
         if not isinstance(entry["id"], str) or not 1 <= len(entry["id"]) <= 64 or entry["id"] in seen:
             raise ValueError("Context IDs must be unique short strings")
@@ -57,6 +96,11 @@ def normalize_context(snapshot, document=None):
         if any(not isinstance(entry[k], str) or not entry[k].strip() or len(entry[k]) > 500
                for k in ("source", "summary")):
             raise ValueError("Context source and summary must be nonempty and at most 500 characters")
+        if "retrieved_at" in entry:
+            timestamp(entry["retrieved_at"])
+        if "source_item_id" in entry and (not isinstance(entry["source_item_id"], str)
+                                          or not 1 <= len(entry["source_item_id"]) <= 64):
+            raise ValueError("Context source_item_id must be a short string")
         observed = timestamp(entry["observed_at"])
         age = now - observed
         status = "future" if age < pd.Timedelta(0) else "fresh"
@@ -76,7 +120,7 @@ def normalize_context(snapshot, document=None):
                for pid in players for kind in ("injury", "matchup")
                if not any(e["player_id"] == pid and e["kind"] == kind and e["status"] == "fresh" for e in normalized)]
     return {"entries": normalized, "coverage": missing,
-            "limitations": ["Context is caller-supplied evidence, not independently verified provider data",
+            "limitations": ["Context is supplied evidence, not independently verified",
                             "Injury context expires after 24 hours; matchup context after 7 days",
                             "Stale, future and irrelevant-opponent entries cannot support model selection",
                             "Opponent history is descriptive; sample size does not establish causation"]}
