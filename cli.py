@@ -39,8 +39,10 @@ def build_parser():
     parser.add_argument("--snapshot", type=Path, help="replay a saved waiver snapshot without ESPN or MySQL")
     parser.add_argument("--basic-waivers", action="store_true", help="use the original non-roster-aware waiver board")
     parser.add_argument("--historical-date", help="reconstruct a previous-season waiver demo at local midnight (YYYY-MM-DD)")
-    parser.add_argument("--season", type=int, help="ESPN season ending year for a historical demo")
-    parser.add_argument("--output-dir", type=Path, help="directory for waiver outputs (historical demos default to a separate folder)")
+    parser.add_argument("--season", type=int, help="ESPN season ending year for a historical demo or explicit draft capture")
+    parser.add_argument("--capture-draft-projections", action="store_true",
+                        help="with --mode draft, --season and --output-dir: append observed ESPN forecasts for stored draft picks")
+    parser.add_argument("--output-dir", type=Path, help="directory for waiver outputs, or a new directory for explicit draft capture")
     parser.add_argument("--streaming-plan", action="store_true", help="plan a bounded sequence of current-matchup acquisitions")
     parser.add_argument("--max-moves", type=int, choices=range(4), help="streaming search depth, 0-3 (default 2)")
     parser.add_argument("--streaming-context", type=Path, help="dated injury/opponent context JSON")
@@ -52,16 +54,25 @@ def build_parser():
 
 
 def validate_args(parser, args):
+    if args.capture_draft_projections:
+        if args.mode != "draft" or args.season is None or args.output_dir is None:
+            parser.error("--capture-draft-projections requires --mode draft, explicit --season and --output-dir")
+        if not 2000 <= args.season <= 9999:
+            parser.error("Draft capture --season must be a season ending year from 2000 to 9999")
+        if args.team is not None or args.week is not None:
+            parser.error("Draft capture does not accept --team or --week")
     if args.streaming_plan and (args.mode != "waivers" or args.basic_waivers or args.historical_date):
         parser.error("--streaming-plan requires roster-aware waivers or a saved snapshot; historical demos are unsupported")
     if (args.max_moves is not None or args.streaming_context or args.claude_review or args.claude_model) and not args.streaming_plan:
         parser.error("Streaming options require --streaming-plan")
-    if (args.snapshot or args.waiver_config or args.protect or args.basic_waivers or args.recent_window is not None or args.historical_date or args.season or args.output_dir) and args.mode != "waivers":
+    if (args.snapshot or args.waiver_config or args.protect or args.basic_waivers or args.recent_window is not None or args.historical_date) and args.mode != "waivers":
         parser.error("Waiver options require --mode waivers")
     if args.basic_waivers and (args.snapshot or args.waiver_config or args.protect or args.recent_window is not None or args.historical_date):
         parser.error("--basic-waivers cannot be combined with advisor options")
-    if args.season is not None and not args.historical_date:
-        parser.error("--season requires --historical-date")
+    if args.season is not None and not args.historical_date and not args.capture_draft_projections:
+        parser.error("--season requires --historical-date or --capture-draft-projections")
+    if args.output_dir and args.mode != "waivers" and not args.capture_draft_projections:
+        parser.error("--output-dir requires waivers mode or --capture-draft-projections")
     if args.historical_date and (args.snapshot or args.waiver_config):
         parser.error("--historical-date cannot be combined with --snapshot or --waiver-config")
 

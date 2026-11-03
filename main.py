@@ -39,6 +39,22 @@ MIN_GAMES_PLAYED = 41
 OUTPUT_DIR = Path("data")
 RESULTS_DIR = Path("reports")
 
+# This opt-in route captures forecasts only. It must never enter the general
+# League constructors, modeled draft board, weekly ingestion or email workflow.
+if args.capture_draft_projections:
+    from features.draft_projection_capture import CaptureCommitUncertainError, CaptureExportError, run_from_environment
+    try:
+        summary = run_from_environment(args.season, args.output_dir)
+    except (CaptureExportError, CaptureCommitUncertainError) as exc:
+        parser.error(str(exc))
+    except ValueError as exc:
+        parser.error(str(exc))
+    except Exception as exc:
+        parser.error(f"Draft projection capture failed ({type(exc).__name__}); connection/account details suppressed")
+    print("--mode draft --capture-draft-projections: observed forecasts saved; not verified pre-draft")
+    print(json.dumps(summary, indent=2))
+    sys.exit(0)
+
 streaming_options = None
 if args.streaming_plan:
     from features.streaming_context import load_context
