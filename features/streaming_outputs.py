@@ -25,7 +25,7 @@ REVIEW_STATUS_TEXT = {
     "insufficient_plan_data": "Skipped before API request: no evidence-complete plans. See blocking reasons below.",
     "no_alternatives": "Skipped before API request: only one evidence-complete plan.",
     "input_bound_exceeded": "Skipped before API request: comparison exceeds the input size limit.",
-    "error_or_invalid_output": "Review failed validation or the request failed; request dispatch is not recorded. Deterministic selection retained.",
+    "error_or_invalid_output": "Review failed validation or the request failed. Deterministic selection retained. Without a request diagnostic below, request dispatch is not recorded.",
     "validated": "Response validated; selected a supplied, independently checked plan.",
 }
 
@@ -123,7 +123,13 @@ def explanation(result):
     else:
         lines.append(f"Fallback selection: {result['selected_plan_id']} (HOLD). No evidence-complete plan; this is not a recommendation.")
     lines.append(f"Claude review: {review['status']}. {REVIEW_STATUS_TEXT.get(review['status'], review['explanation'])}")
-    plans = {p["plan_id"]: p for p in result["plans"]}
+    if review.get("request_diagnostic"):
+        diag = review["request_diagnostic"]
+        lines.append("  Request diagnostic: " + "; ".join(
+            f"{key}={diag[key]}" for key in ("code", "http_status", "stop_reason") if key in diag)
+            + (f"; usage={diag['usage']}" if diag.get("usage") else "")
+            + ". A received HTTP status means a request was sent; check service-side usage before retrying.")
+    plans ={p["plan_id"]: p for p in result["plans"]}
     players = {p["player_id"]: p for p in result["snapshot"]["players"]}
     sources = {e["id"]: e for e in result["context"]["entries"]}
     selected = plans[result["selected_plan_id"]]

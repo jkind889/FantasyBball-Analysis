@@ -37,7 +37,10 @@ Model availability and live authentication are unverified.
 Failed requests retain bounded `request_diagnostic` metadata in the fallback:
 a stable error code, HTTP status when received, and an allowlisted stop reason
 when relevant. Codes distinguish transport/HTTP failures, response size,
-envelope JSON/shape, truncation, content shape and answer JSON. Response bodies,
+envelope JSON/shape, truncation, content shape and answer JSON; an answer that
+parses but fails plan/evidence validation is `answer_failed_validation`. When a
+response was received, the diagnostic keeps its HTTP status and allowlisted token
+usage, and the explanation text prints them. Response bodies,
 headers, provider error messages and credentials are never included. The adapter
 still accepts exactly one text block and does not retry or relax validation.
 A transport or response-validation failure does not prove that generation or

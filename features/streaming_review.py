@@ -182,6 +182,7 @@ def review_plans(result, context, *, enabled=False, model=None):
                "players": players, "fresh_context": evidence,
                "context_coverage": [e for e in context["coverage"] if e["player_id"] in relevant],
                "limitations": result["limitations"] + context["limitations"]}
+    diagnostics = {}
     try:
         for plan in plans:
             validate_plan(result["snapshot"], plan)
@@ -189,10 +190,16 @@ def review_plans(result, context, *, enabled=False, model=None):
         # UTF-8 byte bound is a conservative input-token bound, including system text.
         if len((SYSTEM + encoded).encode("utf-8")) > MAX_INPUT_BYTES:
             return dict(fallback, status="input_bound_exceeded")
-        answer = _validate(_request(encoded, model, key), plans, evidence, result["snapshot"])
+        answer = _validate(_request(encoded, model, key, diagnostics=diagnostics),
+                           plans, evidence, result["snapshot"])
     except ModelRequestError as exc:
-        return dict(fallback, status="error_or_invalid_output", request_diagnostic=exc.diagnostic)
+        return dict(fallback, status="error_or_invalid_output",
+                    request_diagnostic={**diagnostics, **exc.diagnostic})
     except (requests.RequestException, ValueError, TypeError, KeyError, OverflowError):
         # Never echo exceptions: HTTP errors can contain request headers or source text.
+        if diagnostics:
+            # A response arrived (and may be billed) but its answer failed validation.
+            return dict(fallback, status="error_or_invalid_output",
+                        request_diagnostic={**diagnostics, "code": "answer_failed_validation"})
         return dict(fallback, status="error_or_invalid_output")
     return dict(answer, status="validated", explanation="Claude selected a supplied, independently validated plan")

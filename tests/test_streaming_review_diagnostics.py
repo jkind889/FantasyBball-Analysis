@@ -108,6 +108,24 @@ class RequestDiagnosticsTests(unittest.TestCase):
         self.assertEqual(review['request_diagnostic'], {'code':'http_error','http_status':404})
         self.assertNotIn('fixture-secret',json.dumps(review))
 
+    def test_answer_rejected_after_200_keeps_status_and_usage(self):
+        # A received, possibly billed response must stay distinguishable from a pre-dispatch failure.
+        result={'deterministic_plan_id':'hold','snapshot':{'players':[], 'as_of':'fixture','rules':{}},'limitations':[]}
+        plans=[{'plan_id':'hold','actions':[],'calendar':[]},{'plan_id':'fixture','actions':[],'calendar':[]}]
+        context={'entries':[],'coverage':[],'limitations':[]}
+        raw=json.dumps({"stop_reason":"end_turn","usage":{"input_tokens":100,"output_tokens":20},
+                        "content":[{"type":"text","text":'{"unexpected":true}'}]}).encode()
+        with patch.dict(os.environ, {'ANTHROPIC_API_KEY':'fixture-secret'}, clear=True), \
+                patch('features.streaming_review._shortlist', return_value=plans), \
+                patch('features.streaming_review.validate_plan'), \
+                patch('features.streaming_review.requests.post', return_value=self.response(raw)):
+            review=review_plans(result,context,enabled=True,model='fixture')
+        self.assertEqual(review['status'],'error_or_invalid_output')
+        self.assertEqual(review['request_diagnostic'],
+                         {'code':'answer_failed_validation','http_status':200,
+                          'usage':{'input_tokens':100,'output_tokens':20}})
+        self.assertNotIn('fixture-secret',json.dumps(review))
+
 
 if __name__=='__main__':
     unittest.main()
