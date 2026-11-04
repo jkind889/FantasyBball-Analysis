@@ -5,7 +5,8 @@ import unittest
 from unittest.mock import Mock, patch
 
 import requests
-from features.streaming_review import ModelRequestError, _request, review_plans
+from features.streaming_review import (MAX_RESPONSE_BYTES, READ_TIMEOUT_SECONDS,
+                                       ModelRequestError, _request, review_plans)
 
 
 class RequestDiagnosticsTests(unittest.TestCase):
@@ -54,16 +55,52 @@ class RequestDiagnosticsTests(unittest.TestCase):
     def test_unknown_stop_reason_is_redacted(self):
         self.failure(self.response(b'{"stop_reason":"private fixture-secret"}'), 'incomplete_response', stop_reason='unknown')
 
-    def test_multiple_blocks_still_fail_closed(self):
-        body = {'stop_reason':'end_turn','content':[{'type':'thinking','thinking':'private'}, {'type':'text','text':'{}'}]}
-        self.failure(self.response(json.dumps(body).encode()), 'unsupported_content_shape')
+    def test_thinking_blocks_are_ignored_and_never_returned(self):
+        # A model that always thinks returns reasoning blocks before the answer.
+        for reasoning in ({'type':'thinking','thinking':'','signature':'fixture'},
+                          {'type':'thinking','thinking':'private fixture-secret','signature':'fixture'},
+                          {'type':'redacted_thinking','data':'private fixture-secret'}):
+            with self.subTest(block=reasoning['type']):
+                body = {'stop_reason':'end_turn','content':[reasoning, {'type':'text','text':'{"ok":true}'}]}
+                with patch('features.streaming_review.requests.post', return_value=self.response(json.dumps(body).encode())):
+                    self.assertEqual(_request('{}','fixture','fixture-secret'), {'ok':True})
+
+    def test_answers_other_than_one_text_block_still_fail_closed(self):
+        think = {'type':'thinking','thinking':'private'}
+        text = {'type':'text','text':'{}'}
+        tool = {'type':'tool_use','id':'private','name':'private','input':{}}
+        for content, types in (([], []), ([think], ['thinking']), ([text, text], ['text']),
+                               ([think, text, text], ['text', 'thinking']), ([think, tool], ['thinking', 'tool_use']),
+                               ([text, tool], ['text', 'tool_use'])):
+            with self.subTest(types=types, count=len(content)):
+                body = {'stop_reason':'end_turn','content':content}
+                self.failure(self.response(json.dumps(body).encode()), 'unsupported_content_shape', content_types=types)
 
     def test_non_string_or_missing_text_is_diagnosed(self):
-        for block in ({'type':'text'}, {'type':'text','text':3}, 'private'):
-            self.failure(self.response(json.dumps({'stop_reason':'end_turn','content':[block]}).encode()), 'unsupported_content_shape')
+        for block, types in (({'type':'text'}, ['text']), ({'type':'text','text':3}, ['text']), ('private', ['unknown'])):
+            self.failure(self.response(json.dumps({'stop_reason':'end_turn','content':[block]}).encode()),
+                         'unsupported_content_shape', content_types=types)
+
+    def test_unknown_block_type_names_are_redacted(self):
+        body = {'stop_reason':'end_turn','content':[{'type':'private fixture-secret'}, {'type':'text','text':'{}'}]}
+        self.failure(self.response(json.dumps(body).encode()), 'unsupported_content_shape', content_types=['text', 'unknown'])
+
+    def test_malformed_block_types_are_diagnosed_once(self):
+        body = {'stop_reason':'end_turn','content':[{'type':['private']}, {'type':{'private':1}}, {'type':'private'}, {}]}
+        self.failure(self.response(json.dumps(body).encode()), 'unsupported_content_shape', content_types=['unknown'])
+
+    def test_non_list_content_is_diagnosed(self):
+        body = {'stop_reason':'end_turn','content':'private'}
+        self.failure(self.response(json.dumps(body).encode()), 'unsupported_content_shape', content_types=[])
 
     def test_oversized_response_is_distinguished(self):
-        self.failure(self.response(b'x'*32001), 'response_too_large')
+        self.failure(self.response(b'x'*(MAX_RESPONSE_BYTES + 1)), 'response_too_large')
+
+    def test_read_timeout_covers_a_full_answer_arriving_at_once(self):
+        with patch('features.streaming_review.requests.post', return_value=self.response()) as post:
+            _request('{}','fixture','fixture-secret')
+        self.assertEqual(post.call_args.kwargs['timeout'][1], READ_TIMEOUT_SECONDS)
+        self.assertGreaterEqual(READ_TIMEOUT_SECONDS, 120)
 
     def test_transport_error_without_response_does_not_imply_no_billing(self):
         with patch('features.streaming_review.requests.post', side_effect=requests.Timeout('private fixture-secret')) as post:

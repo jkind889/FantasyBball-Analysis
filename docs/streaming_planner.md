@@ -40,10 +40,12 @@ when relevant. Codes distinguish transport/HTTP failures, response size,
 envelope JSON/shape, truncation, content shape and answer JSON; an answer that
 parses but fails plan/evidence validation is `answer_failed_validation`. When a
 response was received, the diagnostic keeps its HTTP status and allowlisted token
-usage, and the explanation text prints them. Response bodies,
+usage, and the explanation text prints them. A content-shape failure also lists
+allowlisted block type names, never block contents. Response bodies,
 headers, provider error messages and credentials are never included. The adapter
-still accepts exactly one text block and does not retry or relax validation.
-A transport or response-validation failure does not prove that generation or
+ignores `thinking` and `redacted_thinking` blocks without keeping them, because
+some models cannot turn thinking off, and requires exactly one text block as the
+answer. It does not retry or relax validation. A transport or response-validation failure does not prove that generation or
 billing did not occur; inspect service-side usage before approving a retry.
 
 ## Budgets, legality, and search bounds
@@ -149,9 +151,9 @@ Entries may also carry `retrieved_at` (timezone-aware) and `source_item_id` (at 
   `observed_at` is ESPN's declared publish time; `retrieved_at` is when it was fetched.
 - **Budgets:** at most two blurbs per player, 240-character summaries and about 4 KB in
   total. Caller-supplied entries always win. Everything trimmed is counted.
-- **Review input bound:** plans alone used about 11 KB of the review's 16 KB bound on a
-  one-day horizon and about 15 KB on a six-day horizon, and each player with fresh
-  evidence adds game rows. When the payload is too large, the review withholds news
+- **Review input bound:** a real six-day week measured about 14.5 KB without news and
+  19.3 KB with four blurbs, because each player with fresh evidence adds game rows to
+  every plan. The bound is 32 KB. When the payload is too large, the review withholds news
   from the lowest priority upward and reports the count as `evidence_trimmed`. Caller
   evidence is never withheld, so a payload that is still too large skips the review as
   `input_bound_exceeded`.
@@ -180,9 +182,11 @@ season values, fresh evidence,
 missing-context coverage, and limitations. It uses the
 [Anthropic Messages API](https://platform.claude.com/docs/en/api/overview).
 One request is allowed per invocation, with no retries or redirects, a 5-second
-connect / 20-second read timeout, 16,000 UTF-8 input bytes including instructions,
-900 output tokens, and a 32,000-byte response limit. The byte cap is a conservative
-input-token bound, not a monetary cost estimate. Oversized inputs skip the model.
+connect / 120-second read timeout, 32,000 UTF-8 input bytes including instructions,
+4,000 output tokens, and a 64,000-byte response limit. Thinking counts toward the
+output tokens. The read timeout is long because a non-streaming response sends nothing
+until generation finishes. The byte cap is a conservative input-token bound, not a
+monetary cost estimate. Oversized inputs skip the model.
 
 The model returns only a selected plan ID and structured comparison reasons with
 player/evidence IDs. Unknown IDs, extra numeric fields, unsupported reasons,
