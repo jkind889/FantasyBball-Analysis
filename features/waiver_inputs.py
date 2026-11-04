@@ -8,6 +8,7 @@ import json
 import math
 import warnings
 from collections import defaultdict
+from datetime import date
 from types import SimpleNamespace
 
 import pandas as pd
@@ -20,6 +21,9 @@ from features.league_rules import validate_rules
 from features.nba_schedule import build_nba_schedule
 from features.predictive_engine import run_projection_pipeline
 from features.recent_form import number, timestamp
+
+# Ordinary NBA off days run one or two days; the All-Star break runs five or six.
+MIN_SCHEDULE_GAP_DAYS = 4
 
 
 def normalize_rules(raw, team, config, daily_used=None):
@@ -205,6 +209,50 @@ def matchup_mapping(raw, config, week):
     return {w: sorted(periods) for w, periods in mapping.items()}
 
 
+def period_dates(schedule, timezone):
+    """Local calendar dates of each scoring period that has games."""
+    dates = defaultdict(set)
+    tipoffs = pd.to_datetime(schedule["tipoff"], utc=True).dt.tz_convert(timezone).dt.date
+    for period, day in zip(schedule["scoring_period"], tipoffs):
+        dates[int(period)].add(day)
+    return dict(dates)
+
+
+def infer_matchup_periods(week, started, previous, week_ids, dates, final_period):
+    """Every daily scoring ID of an unfinished matchup, or None if it can't be trusted.
+
+    ESPN lists only days that have started. Matchups run Monday to Sunday (the season
+    opener starts later that week) for as many weeks as they have week IDs. The
+    All-Star matchup breaks that: one week ID covering 14 days. It can't be told apart
+    from the settings, so any long stretch without games, this week or next, stops the
+    inference. That also covers games ESPN hasn't published yet.
+    """
+    if not started or not dates or not isinstance(week_ids, list) or not week_ids:
+        return None
+    start = min(started)
+    if week > 1 and (not previous or max(previous) + 1 != start):
+        return None
+    # Period IDs must count calendar days for date arithmetic to hold.
+    offsets = {day.toordinal() - period for period, days in dates.items() for day in days}
+    if len(offsets) != 1:
+        return None
+    weekday = date.fromordinal(offsets.pop() + start).weekday()
+    if week > 1 and weekday != 0:
+        return None
+    end = start + (6 - weekday) + 7 * (len(week_ids) - 1)
+    if end > final_period or max(started) > end:
+        return None
+    gap = []
+    for period in range(min(dates), max(dates) + 1):
+        if period not in dates:
+            gap.append(period)
+            continue
+        if len(gap) >= MIN_SCHEDULE_GAP_DAYS and gap[-1] >= start and gap[0] <= end + 7:
+            return None
+        gap = []
+    return list(range(start, end + 1))
+
+
 def fetch_snapshot(league, previous_league, team_id, week=None, config=None):
     """Fetch a fresh roster, exhaustive paginated waiver pool, and batched logs.
 
@@ -232,13 +280,23 @@ def fetch_snapshot(league, previous_league, team_id, week=None, config=None):
     # Full future period mapping is needed even when no matchup has played yet.
     mapping = matchup_mapping(raw, config, week)
     schedule = build_nba_schedule(league, matchup_ids=mapping)
-    mapped = {p for periods in mapping.values() for p in periods}
-    # Never allow build_nba_schedule's retrospective seven-day fallback in advice.
-    schedule.loc[~schedule.scoring_period.isin(mapped), "fantasy_week"] = -1
     max_period = max(mapping[week])
     full_horizon = (bool(config.get("matchup_scoring_periods"))
                     or max_period == raw["status"]["finalScoringPeriod"]
                     or bool(mapping.get(week + 1)) and max_period + 1 == min(mapping[week + 1]))
+    inferred = None
+    if not full_horizon:
+        inferred = infer_matchup_periods(
+            week, mapping[week], mapping.get(week - 1),
+            raw["settings"].get("scheduleSettings", {}).get("matchupPeriods", {}).get(str(week)),
+            period_dates(schedule, rules["timezone"]), raw["status"]["finalScoringPeriod"])
+    if inferred:
+        mapping[week] = inferred
+        schedule = build_nba_schedule(league, matchup_ids=mapping)
+        full_horizon = True
+    mapped = {p for periods in mapping.values() for p in periods}
+    # Never allow build_nba_schedule's retrospective seven-day fallback in advice.
+    schedule.loc[~schedule.scoring_period.isin(mapped), "fantasy_week"] = -1
     pool, seen, complete = [], set(), False
     for offset in range(0, 10000, 250):
         filters = {"players": {"filterStatus": {"value": ["FREEAGENT", "WAIVERS"]},
@@ -330,6 +388,9 @@ def fetch_snapshot(league, previous_league, team_id, week=None, config=None):
     limitations = ["Same-day game logs included only when the NBA schedule marks stats official",
                    "Season-long VORP uses the existing approximate replacement baseline",
                    "Future schedule entries without a reported status are assumed scheduled"]
+    if inferred:
+        limitations.append(f"Matchup {week} end inferred as scoring period {inferred[-1]} from the Monday-to-Sunday "
+                           "calendar; ESPN does not list future days, so verify the end date in ESPN")
     if config:
         limitations.append("Explicit local rule/player overrides applied; verify against current ESPN rules")
     if failures:

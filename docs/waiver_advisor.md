@@ -207,8 +207,17 @@ Player overrides support `protected`, `undroppable`, `availability`, and
 `available_at`. Unknown waiver processing time is not inferred from a generic
 waiver duration. If needed, `matchup_scoring_periods` can explicitly list the
 current matchup's **daily scoring-period IDs**. ESPN's settings `matchupPeriods`
-contains week IDs and must not be used as that list. Without a verifiable full
-target-period boundary, advice is marked partial.
+contains week IDs and must not be used as that list.
+
+ESPN lists only days that have started, so mid-matchup the end is inferred: Monday
+to Sunday, for as many weeks as the matchup has week IDs (the season opener starts
+later that week). This matched every ordinary and playoff matchup in the 2025 and
+2026 seasons of one league, and the snapshot records it as a limitation. The
+All-Star matchup is the exception, with one week ID covering 14 days. Settings
+can't reveal it, so a stretch of four or more days without games, in this week or
+the next, stops the inference. That also catches games ESPN hasn't published yet.
+Those weeks need `matchup_scoring_periods`; without a verifiable full target-period
+boundary, advice is marked partial.
 
 The JSON snapshot format is versioned (`schema_version: 1`); the included example
 is also a complete reference for offline inputs. Live rule/player overrides are
