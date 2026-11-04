@@ -39,7 +39,8 @@ Failed requests retain bounded `request_diagnostic` metadata in the fallback:
 a stable error code, HTTP status when received, and an allowlisted stop reason
 when relevant. Codes distinguish transport/HTTP failures, response size,
 envelope JSON/shape, truncation, content shape and answer JSON; an answer that
-parses but fails plan/evidence validation is `answer_failed_validation`. When a
+parses but fails plan/evidence validation is `answer_failed_validation`, with the
+rule it broke as fixed text in `validation_failure`. When a
 response was received, the diagnostic keeps its HTTP status and allowlisted token
 usage, and the explanation text prints them. A content-shape failure also lists
 allowlisted block type names, never block contents. Response bodies,
@@ -190,7 +191,10 @@ until generation finishes. The byte cap is a conservative input-token bound, not
 monetary cost estimate. Oversized inputs skip the model.
 
 The model returns only a selected plan ID and structured comparison reasons with
-player/evidence IDs. Unknown IDs, extra numeric fields, unsupported reasons,
+player/evidence IDs. The request sends that shape as a JSON schema through
+`output_config.format`, so a model without structured outputs fails with an HTTP error
+and keeps the deterministic plan. The schema fixes the shape only; Python still checks
+every ID, count and rule, and the prompt states those rules. Unknown IDs, extra numeric fields, unsupported reasons,
 unfresh citations, incomplete responses, malformed JSON, or invalid plans reject
 the entire response. Python checks legality and recomputes plan numbers; explanatory
 text uses fixed templates and attributed source excerpts. Arbitrary model prose is

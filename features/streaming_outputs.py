@@ -176,7 +176,7 @@ def explanation(result):
     if review.get("request_diagnostic"):
         diag = review["request_diagnostic"]
         lines.append("  Request diagnostic: " + "; ".join(
-            f"{key}={diag[key]}" for key in ("code", "http_status", "stop_reason", "content_types") if key in diag)
+            f"{key}={diag[key]}" for key in ("code", "http_status", "stop_reason", "content_types", "validation_failure") if key in diag)
             + (f"; usage={diag['usage']}" if diag.get("usage") else "")
             + ". A received HTTP status means a request was sent; check service-side usage before retrying.")
     plans ={p["plan_id"]: p for p in result["plans"]}

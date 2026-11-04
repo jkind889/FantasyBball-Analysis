@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import requests
-from features.streaming_review import (MAX_RESPONSE_BYTES, READ_TIMEOUT_SECONDS,
+from features.streaming_review import (ANSWER_SCHEMA, MAX_RESPONSE_BYTES, READ_TIMEOUT_SECONDS, REASONS,
                                        ModelRequestError, _request, review_plans)
 
 
@@ -96,6 +96,31 @@ class RequestDiagnosticsTests(unittest.TestCase):
     def test_oversized_response_is_distinguished(self):
         self.failure(self.response(b'x'*(MAX_RESPONSE_BYTES + 1)), 'response_too_large')
 
+    def test_request_asks_for_the_answer_schema(self):
+        with patch('features.streaming_review.requests.post', return_value=self.response()) as post:
+            _request('{}','fixture','fixture-secret')
+        self.assertEqual(post.call_args.kwargs['json']['output_config'],
+                         {'format': {'type':'json_schema','schema':ANSWER_SCHEMA}})
+
+    def test_answer_schema_stays_within_what_the_api_accepts(self):
+        def walk(node):
+            self.assertFalse(set(node) & {'minItems','maxItems','minimum','maximum','minLength','maxLength'})
+            if node['type'] == 'object':
+                self.assertIs(node['additionalProperties'], False)
+                self.assertEqual(set(node['required']), set(node['properties']))
+                for child in node['properties'].values():
+                    walk(child)
+            if node['type'] == 'array':
+                walk(node['items'])
+        walk(ANSWER_SCHEMA)
+        json.dumps(ANSWER_SCHEMA)
+
+    def test_answer_schema_matches_the_validator(self):
+        item = ANSWER_SCHEMA['properties']['comparisons']['items']
+        self.assertEqual(set(ANSWER_SCHEMA['properties']), {'selected_plan_id','comparisons'})
+        self.assertEqual(set(item['properties']), {'plan_id','reason','player_ids','evidence_ids'})
+        self.assertEqual(set(item['properties']['reason']['enum']), REASONS)
+
     def test_read_timeout_covers_a_full_answer_arriving_at_once(self):
         with patch('features.streaming_review.requests.post', return_value=self.response()) as post:
             _request('{}','fixture','fixture-secret')
@@ -160,8 +185,25 @@ class RequestDiagnosticsTests(unittest.TestCase):
         self.assertEqual(review['status'],'error_or_invalid_output')
         self.assertEqual(review['request_diagnostic'],
                          {'code':'answer_failed_validation','http_status':200,
+                          'validation_failure':'Unexpected response fields',
                           'usage':{'input_tokens':100,'output_tokens':20}})
         self.assertNotIn('fixture-secret',json.dumps(review))
+
+    def test_failure_from_plan_checks_is_not_echoed(self):
+        # validate_plan messages aren't fixed text, so they stay out of exports.
+        result={'deterministic_plan_id':'hold','snapshot':{'players':[], 'as_of':'fixture','rules':{}},'limitations':[]}
+        plans=[{'plan_id':'hold','actions':[],'calendar':[]},{'plan_id':'fixture','actions':[],'calendar':[]}]
+        context={'entries':[],'coverage':[],'limitations':[]}
+        answer={'selected_plan_id':'hold','comparisons':[{'plan_id':'hold','reason':'hold','player_ids':[],'evidence_ids':[]}]}
+        raw=json.dumps({"stop_reason":"end_turn","content":[{"type":"text","text":json.dumps(answer)}]}).encode()
+        calls=[None, None, ValueError('private fixture-secret')]
+        with patch.dict(os.environ, {'ANTHROPIC_API_KEY':'fixture-secret'}, clear=True), \
+                patch('features.streaming_review._shortlist', return_value=plans), \
+                patch('features.streaming_review.validate_plan', side_effect=calls), \
+                patch('features.streaming_review.requests.post', return_value=self.response(raw)):
+            review=review_plans(result,context,enabled=True,model='fixture')
+        self.assertEqual(review['request_diagnostic'], {'code':'answer_failed_validation','http_status':200})
+        self.assertNotIn('private',json.dumps(review))
 
 
 if __name__=='__main__':
