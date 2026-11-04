@@ -31,9 +31,10 @@ Claude is **off by default**. To explicitly request one model comparison, add
 `--claude-review --claude-model YOUR_MODEL_ID --streaming-context context.json`.
 The adapter uses an already configured `ANTHROPIC_API_KEY`; a non-workspace-scoped
 key may also require `ANTHROPIC_WORKSPACE_ID`. This feature does not configure
-credentials. Live requests to `claude-opus-5-5` have authenticated and returned
-HTTP 200, but none has yet produced a validated review: the latest answer failed as
-`invalid_answer_json`. Other models are unverified.
+credentials. Five live requests to `claude-opus-5-5` on one matchup's data all
+validated, each using about 10,700 input and 900 or fewer output tokens. All five chose
+the deterministic plan and cited no evidence, so an evidence-based or differing choice
+has not been exercised live. Other models are unverified.
 
 Failed requests retain bounded `request_diagnostic` metadata in the fallback:
 a stable error code, HTTP status when received, and an allowlisted stop reason
