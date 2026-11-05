@@ -12,11 +12,12 @@ def build_parser():
     parser = argparse.ArgumentParser(description="FantasyBball-Analysis pipeline")
     parser.add_argument(
         "--mode",
-        choices=("weekly", "draft", "waivers", "startsit"),
+        choices=("weekly", "draft", "waivers", "startsit", "news-scan"),
         default="weekly",
         help=(
             "weekly (default): full retrospective + predictive run. "
-            "draft / waivers / startsit: a single forward-looking decision report."
+            "draft / waivers / startsit: a single forward-looking decision report. "
+            "news-scan: save ESPN blurbs for flagged players to the news history only."
         ),
     )
     parser.add_argument(
@@ -56,6 +57,8 @@ def build_parser():
 
 
 def validate_args(parser, args):
+    if args.mode == "news-scan" and (args.team is not None or args.week is not None):
+        parser.error("--mode news-scan covers the whole league; it does not accept --team or --week")
     if args.capture_draft_projections:
         if args.mode != "draft" or args.season is None or args.output_dir is None:
             parser.error("--capture-draft-projections requires --mode draft, explicit --season and --output-dir")

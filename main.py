@@ -149,6 +149,17 @@ if args.historical_date:
     print(result["recommendations"][["rank", "add_name", "drop_name", "net_gain", "status"]].head(10).to_string(index=False))
     sys.exit(0)
 
+# Writes only the news history: no previous season, MySQL, reports or email.
+if args.mode == "news-scan":
+    from features.news_scan import format_summary, run_scan
+    try:
+        summary = run_scan(League(league_id=int(os.environ["ESPN_LEAGUE_ID"]), year=int(os.environ["ESPN_YEAR"]),
+                                  espn_s2=os.environ["ESPN_S2"], swid=os.environ["ESPN_SWID"]))
+    except Exception as exc:
+        parser.error(f"News scan failed ({type(exc).__name__}); connection/account details suppressed")
+    print(format_summary(summary))
+    sys.exit(0 if summary["status"] == "ok" else 1)
+
 current_year = int(os.environ["ESPN_YEAR"])
 
 current_league = League(

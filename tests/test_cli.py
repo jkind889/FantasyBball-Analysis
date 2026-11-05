@@ -105,6 +105,14 @@ class CliTest(unittest.TestCase):
                 parse_args(argv)
             self.assertEqual(exc.exception.code, 2)
 
+    def test_news_scan_is_league_wide_and_rejects_other_options(self):
+        self.assertEqual(parse_args(["--mode", "news-scan"])[1].mode, "news-scan")
+        for extra in (["--team", "3"], ["--week", "5"], ["--output-dir", "x"], ["--protect", "1"],
+                      ["--streaming-plan"], ["--snapshot", "x"]):
+            with self.subTest(extra=extra), redirect_stderr(StringIO()), self.assertRaises(SystemExit) as exc:
+                parse_args(["--mode", "news-scan", *extra])
+            self.assertEqual(exc.exception.code, 2)
+
     def test_invalid_inputs_reprompt(self):
         args, output = self.menu(["oops", "9", "8", "-1", "3", "2026-02-30", "2026-01-08",
                                   "bad", "2026", "7", "5", "bad", "12 34", "", "maybe", "yes"])

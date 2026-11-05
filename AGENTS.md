@@ -19,7 +19,8 @@
 - `database.py`: environment-based MySQL connection. Do not open it in tests.
 - `features/`: retrospective reports, schedule/lineup analysis, predictive
   inputs and scoring, decision modes, waiver snapshots, historical demos, the
-  streaming planner and its Claude review, ESPN injury news (`player_news.py`),
+  streaming planner and its Claude review, ESPN injury news (`player_news.py`,
+  `news_scan.py`),
   offline draft replay, and explicit draft forecast capture.
 - `features/provider_projections.py`: provider forecast normalization and
   snapshot persistence; `migrations/`: reviewed, explicitly applied schema SQL.

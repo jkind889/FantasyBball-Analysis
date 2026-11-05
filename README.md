@@ -219,7 +219,8 @@ availability and injury assumptions. Its saved snapshot also supports offline re
 The scoring logic lives in `features/decision_modes.py` (pure, unit-tested); the shared projection chain is `features/predictive_engine.py`.
 
 See [the streaming planner guide](docs/streaming_planner.md) for offline replay,
-dated injury/opponent context, opt-in ESPN injury news (`--streaming-news`), optional Claude comparison, and explicit search limits.
+dated injury/opponent context, opt-in ESPN injury news (`--streaming-news`), the league-wide injury news scan
+(`--mode news-scan`), optional Claude comparison, and explicit search limits.
 Claude review is opt-in and falls back to deterministic rankings; it does not change
 computed points or submit roster transactions.
 

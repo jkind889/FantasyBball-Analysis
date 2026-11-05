@@ -162,6 +162,14 @@ Entries may also carry `retrieved_at` (timezone-aware) and `source_item_id` (at 
   gets a new row. `retrieved_at` shows when we had a blurb, not that ESPN's `published`
   time is right. Nothing reads this file yet, so it has no effect on plans or reviews.
   A failed save is reported and never blocks planning.
+- **League-wide scan:** `venv/bin/python -B main.py --mode news-scan` adds blurbs for
+  every player ESPN currently flags (any status other than `ACTIVE`) to the same history.
+  It reads rosters and the free-agent pool, then requests one player at a time with a
+  short pause, most-owned first. It is limited to 250 players and 5 minutes, and stops
+  after 5 failures in a row. It exits with status 1 if the scan was partial. It doesn't
+  touch MySQL, reports, email, plans or Claude. It isn't scheduled, so run it about
+  weekly: a player hurt and back between scans is missed, and players with no status
+  are counted but not scanned.
 - **Review input bound:** a real six-day week measured about 14.5 KB without news and
   19.3 KB with four blurbs, because each player with fresh evidence adds game rows to
   every plan. The bound is 32 KB. When the payload is too large, the review withholds news

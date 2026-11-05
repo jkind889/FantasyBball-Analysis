@@ -253,6 +253,28 @@ def infer_matchup_periods(week, started, previous, week_ids, dates, final_period
     return list(range(start, end + 1))
 
 
+def fetch_unowned_pool(request, scoring_period):
+    """Every free agent and waiver player by ownership; False if paging didn't finish."""
+    pool, seen = [], set()
+    for offset in range(0, 10000, 250):
+        filters = {"players": {"filterStatus": {"value": ["FREEAGENT", "WAIVERS"]},
+                               "limit": 250, "offset": offset,
+                               "filterSlotIds": {"value": []},
+                               "sortDraftRanks": {"sortPriority": 100, "sortAsc": True, "value": "STANDARD"},
+                               "sortPercOwned": {"sortPriority": 1, "sortAsc": False}}}
+        response = request.league_get(params={"view": "kona_player_info", "scoringPeriodId": scoring_period},
+                                      headers={"x-fantasy-filter": json.dumps(filters)})
+        page = response["players"]
+        new = [p for p in page if p["player"]["id"] not in seen]
+        pool.extend(new)
+        seen.update(p["player"]["id"] for p in new)
+        if len(page) < 250:
+            return pool, True
+        if not new:
+            break
+    return pool, False
+
+
 def fetch_snapshot(league, previous_league, team_id, week=None, config=None):
     """Fetch a fresh roster, exhaustive paginated waiver pool, and batched logs.
 
@@ -297,24 +319,7 @@ def fetch_snapshot(league, previous_league, team_id, week=None, config=None):
     mapped = {p for periods in mapping.values() for p in periods}
     # Never allow build_nba_schedule's retrospective seven-day fallback in advice.
     schedule.loc[~schedule.scoring_period.isin(mapped), "fantasy_week"] = -1
-    pool, seen, complete = [], set(), False
-    for offset in range(0, 10000, 250):
-        filters = {"players": {"filterStatus": {"value": ["FREEAGENT", "WAIVERS"]},
-                               "limit": 250, "offset": offset,
-                               "filterSlotIds": {"value": []},
-                               "sortDraftRanks": {"sortPriority": 100, "sortAsc": True, "value": "STANDARD"},
-                               "sortPercOwned": {"sortPriority": 1, "sortAsc": False}}}
-        response = request.league_get(params={"view": "kona_player_info", "scoringPeriodId": raw["scoringPeriodId"]},
-                                      headers={"x-fantasy-filter": json.dumps(filters)})
-        page = response["players"]
-        new = [p for p in page if p["player"]["id"] not in seen]
-        pool.extend(new)
-        seen.update(p["player"]["id"] for p in new)
-        if len(page) < 250:
-            complete = True
-            break
-        if not new:
-            break
+    pool, complete = fetch_unowned_pool(request, raw["scoringPeriodId"])
     raw_entries = raw_team.get("roster", {}).get("entries", [])
     own = {e["playerId"]: e for e in raw_entries}
     owned_ids = {e["playerId"] for t in raw["teams"] for e in t.get("roster", {}).get("entries", [])}
