@@ -61,6 +61,24 @@ class StreamingNewsTests(unittest.TestCase):
         self.assertIn("added 1 injury blurbs", text)
         self.assertIn("does not mean a player is healthy", text)
 
+    def test_history_is_written_only_when_a_path_is_given(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "blurbs.jsonl"
+            result = run_streaming(sequence_snapshot(), news_fetcher=feeds({1: [blurb(1)]}), news_history=path)
+            self.assertEqual(result["news"]["history"]["added"], 1)
+            self.assertEqual(json.loads(path.read_text())["player_id"], 1)
+            self.assertIn("News history: saved 1 new blurbs", explanation(result))
+        self.assertNotIn("history", run_streaming(sequence_snapshot(), news_fetcher=feeds({1: [blurb(1)]}))["news"])
+
+    def test_history_failure_never_blocks_planning_or_the_news_context(self):
+        with tempfile.TemporaryDirectory() as directory:  # A directory can't be opened as the history file.
+            result = run_streaming(sequence_snapshot(), news_fetcher=feeds({1: [blurb(1)]}), news_history=directory)
+        self.assertEqual(result["news"]["history"]["status"], "error")
+        self.assertEqual(result["news"]["entries_added"], 1)
+        text = explanation(result)
+        self.assertIn("News history: not saved", text)
+        self.assertNotIn(directory, json.dumps(result["news"]) + text)
+
     def test_news_never_changes_numbers_or_the_deterministic_choice(self):
         plain = run_streaming(sequence_snapshot())
         with_news = run_streaming(sequence_snapshot(), news_fetcher=feeds({1: [blurb(1)], 2: [blurb(2)]}))

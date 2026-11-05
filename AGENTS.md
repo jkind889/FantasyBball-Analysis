@@ -27,6 +27,8 @@
 - `data/` and `reports/`: generated artifacts. Only `data/draft.csv` and
   `data/players.csv` are tracked; `reports/` is untracked. Do not regenerate them
   incidentally or treat an old report as evidence of current provider data.
+  `data/news_history/` is git-ignored and can't be re-fetched: do not delete it,
+  and do not write to it from tests.
 
 ## Data contracts
 

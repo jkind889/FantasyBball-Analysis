@@ -7,6 +7,7 @@ is recorded separately. Absence of news never means a player is healthy.
 
 from datetime import datetime, timezone
 import json
+from pathlib import Path
 import re
 import time
 import unicodedata
@@ -30,6 +31,9 @@ MAX_ITEMS_PER_PLAYER = 2
 # with the horizon, so it withholds the lowest-priority news itself when needed.
 MAX_CONTEXT_BYTES = 4000
 NAME_SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "v"}
+# Git-ignored and append-only: ESPN's feed is count-capped, so old blurbs can't be re-fetched.
+HISTORY_PATH = Path(__file__).resolve().parent.parent / "data" / "news_history" / "blurbs.jsonl"
+HISTORY_FIELDS = ("player_id", "item_id", "published", "headline", "story")
 # Injury wording only counts shortly after the player's own name in the headline,
 # with no capitalized name in between: stories and later clauses often describe
 # teammates ("Smith will start with Jones sidelined").
@@ -152,6 +156,47 @@ def select_news_entries(results, players, *, as_of, max_age=pd.Timedelta(hours=2
                 row["selected"] += 1
         report.append(row)
     return entries, report
+
+
+def save_news_history(results, players, path=HISTORY_PATH):
+    """Append this player's blurbs not saved yet, whatever their age or topic.
+
+    Rows are never rewritten. `retrieved_at` is when this text was first seen, and an
+    edited blurb gets its own row, so a later reader can tell what was known when.
+    Unreadable lines stay in place and are only counted.
+    """
+    path = Path(path)
+    seen, unreadable, ends_cleanly = set(), 0, True
+    if path.exists():
+        with path.open(encoding="utf-8") as handle:
+            for line in handle:
+                ends_cleanly = line.endswith("\n")
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                    seen.add(tuple(row[field] for field in HISTORY_FIELDS))
+                except (ValueError, KeyError, TypeError):
+                    unreadable += 1
+    new_rows, already_saved = [], 0
+    for player_id, fetched in results.items():
+        if fetched.get("status") != "ok":
+            continue
+        for item in filter_news_items(fetched.get("feed"), player_id, players.get(player_id))[0]:
+            key = tuple(item[field] for field in HISTORY_FIELDS)
+            if key in seen:
+                already_saved += 1
+                continue
+            seen.add(key)
+            new_rows.append({**{field: item[field] for field in HISTORY_FIELDS},
+                             "player_name": players.get(player_id), "source": SOURCE_LABEL,
+                             "retrieved_at": fetched["retrieved_at"]})
+    if new_rows:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lines = "".join(json.dumps(row, allow_nan=False) + "\n" for row in new_rows)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(lines if ends_cleanly else "\n" + lines)  # Don't join an interrupted line.
+    return {"status": "ok", "added": len(new_rows), "already_saved": already_saved, "unreadable_lines": unreadable}
 
 
 def fetch_player_news(player_ids, *, get=requests.get, clock=time.monotonic):

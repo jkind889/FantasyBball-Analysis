@@ -1,5 +1,7 @@
 """Offline player news tests; every feed item here is synthetic."""
 import json
+from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import Mock
 
@@ -9,7 +11,7 @@ import requests
 from features.streaming_context import normalize_context
 from features.player_news import (
     MAX_ITEMS_PER_PLAYER, MAX_RESPONSE_BYTES, MAX_SUMMARY_CHARS, NEWS_ENDPOINT,
-    fetch_player_news, filter_news_items, is_injury_headline, select_news_entries,
+    fetch_player_news, filter_news_items, is_injury_headline, save_news_history, select_news_entries,
 )
 
 AS_OF = "2026-11-03T18:00:00+00:00"
@@ -170,6 +172,63 @@ class SelectionTests(unittest.TestCase):
         entries, _ = select_news_entries(results, {1: "Jalen Smith"}, as_of="2026-10-20T00:00:00Z",
                                          max_age=pd.Timedelta(days=30))
         self.assertEqual(len(entries), 1)
+
+
+class HistoryTests(unittest.TestCase):
+    NAMES = {1: "Jalen Smith"}
+
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.path = Path(directory.name) / "nested" / "blurbs.jsonl"
+
+    def rows(self):
+        return [json.loads(line) for line in self.path.read_text().splitlines()]
+
+    def test_saves_old_and_non_injury_blurbs_but_not_clips(self):
+        feed = fetched(blurb(1, published="2020-01-01T00:00:00Z"), blurb(2, headline="Smith scores 30 points."),
+                       {"id": 3, "type": "Media", "video": [{}], "playerId": 1, "headline": "Highlights"})
+        report = save_news_history({1: feed}, self.NAMES, self.path)
+        self.assertEqual(report, {"status": "ok", "added": 2, "already_saved": 0, "unreadable_lines": 0})
+        rows = self.rows()
+        self.assertEqual([row["item_id"] for row in rows], ["1", "2"])
+        self.assertEqual(rows[0]["player_name"], "Jalen Smith")
+        self.assertEqual(rows[0]["story"], "Synthetic detail.")  # Full text, not the 240-character summary.
+        self.assertEqual(rows[0]["published"], "2020-01-01T00:00:00Z")
+        self.assertEqual(rows[0]["retrieved_at"], "2026-11-03T18:00:05+00:00")
+
+    def test_rerun_keeps_the_first_retrieval_and_adds_only_new_items(self):
+        save_news_history({1: fetched(blurb(1))}, self.NAMES, self.path)
+        later = dict(fetched(blurb(1), blurb(2)), retrieved_at="2026-11-05T00:00:00+00:00")
+        report = save_news_history({1: later}, self.NAMES, self.path)
+        self.assertEqual((report["added"], report["already_saved"]), (1, 1))
+        self.assertEqual([(r["item_id"], r["retrieved_at"]) for r in self.rows()],
+                         [("1", "2026-11-03T18:00:05+00:00"), ("2", "2026-11-05T00:00:00+00:00")])
+
+    def test_edited_blurb_keeps_both_observations(self):
+        save_news_history({1: fetched(blurb(1))}, self.NAMES, self.path)
+        save_news_history({1: fetched(blurb(1, headline="Smith (ankle) has been ruled out."))}, self.NAMES, self.path)
+        self.assertEqual(len(self.rows()), 2)
+        self.assertIn("questionable", self.rows()[0]["headline"])
+
+    def test_same_item_for_two_players_stays_separate(self):
+        results = {1: fetched(blurb(1)), 2: fetched(blurb(1, playerId=2))}
+        self.assertEqual(save_news_history(results, self.NAMES, self.path)["added"], 2)
+
+    def test_failed_fetch_and_nothing_new_leave_no_file(self):
+        report = save_news_history({1: fetched(status="fetch_failed")}, self.NAMES, self.path)
+        self.assertEqual(report["added"], 0)
+        self.assertFalse(self.path.exists())
+
+    def test_interrupted_and_bad_lines_are_kept_and_not_joined(self):
+        save_news_history({1: fetched(blurb(1))}, self.NAMES, self.path)
+        original = self.path.read_text()
+        self.path.write_text(original + "5\n{\"player_id\": 1}\n{\"interrupted\": ")
+        report = save_news_history({1: fetched(blurb(1), blurb(2))}, self.NAMES, self.path)
+        self.assertEqual((report["added"], report["already_saved"], report["unreadable_lines"]), (1, 1, 3))
+        lines = self.path.read_text().splitlines()
+        self.assertEqual(lines[:4], [original.strip(), "5", "{\"player_id\": 1}", "{\"interrupted\": "])
+        self.assertEqual(json.loads(lines[4])["item_id"], "2")
 
 
 class FetchTests(unittest.TestCase):

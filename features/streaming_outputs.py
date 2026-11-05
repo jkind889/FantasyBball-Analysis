@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from features.player_news import MAX_NEWS_PLAYERS, NEWS_ENDPOINT, select_news_entries
+from features.player_news import MAX_NEWS_PLAYERS, NEWS_ENDPOINT, save_news_history, select_news_entries
 from features.streaming_context import dump_context, merge_context_entries, normalize_context
 from features.streaming_planner import plan_streaming
 from features.streaming_review import review_plans
@@ -98,7 +98,14 @@ def news_priority(result):
     return list(dict.fromkeys(pid for pid in ids if pid is not None))
 
 
-def add_player_news(result, document, news_fetcher):
+def _save_history(fetched, names, path):
+    try:
+        return save_news_history(fetched, names, path)
+    except Exception as exc:
+        return {"status": "error", "error_type": type(exc).__name__}
+
+
+def add_player_news(result, document, news_fetcher, history_path=None):
     """Add dated injury blurbs to the context; a news failure never blocks planning."""
     snapshot = result["snapshot"]
     normalize_context(snapshot, document)  # Reject a bad caller file before any request.
@@ -112,6 +119,8 @@ def add_player_news(result, document, news_fetcher):
     try:
         fetched = news_fetcher(requested)
         names = {p["player_id"]: p.get("player_name") for p in snapshot["players"]}
+        if history_path is not None:
+            news["history"] = _save_history(fetched, names, history_path)
         entries, news["players"] = select_news_entries(fetched, names, as_of=snapshot["as_of"])
     except Exception as exc:
         return document, dict(news, status="error", error_type=type(exc).__name__)
@@ -120,10 +129,11 @@ def add_player_news(result, document, news_fetcher):
 
 
 def run_streaming(snapshot, *, max_moves=2, protected_ids=(), window=None,
-                  context_document=None, claude=False, model=None, output_dir=None, news_fetcher=None):
+                  context_document=None, claude=False, model=None, output_dir=None, news_fetcher=None,
+                  news_history=None):
     result = plan_streaming(snapshot, max_moves=max_moves, protected_ids=protected_ids, window=window)
     if news_fetcher is not None:
-        context_document, result["news"] = add_player_news(result, context_document, news_fetcher)
+        context_document, result["news"] = add_player_news(result, context_document, news_fetcher, news_history)
     result["context"] = normalize_context(result["snapshot"], context_document)
     result["review"] = review_plans(result, result["context"], enabled=claude, model=model)
     result["selected_plan_id"] = result["review"]["selected_plan_id"]
@@ -147,11 +157,23 @@ def summary_frame(result):
     return pd.DataFrame(rows)
 
 
+def _history_lines(history):
+    if history is None:
+        return []
+    if history["status"] != "ok":
+        return [f"News history: not saved ({history['error_type']}); planning was unaffected."]
+    line = f"News history: saved {history['added']} new blurbs ({history['already_saved']} already saved)."
+    if history["unreadable_lines"]:
+        line += f" {history['unreadable_lines']} existing lines could not be read and were left in place."
+    return [line]
+
+
 def _news_lines(news):
     if news is None:
         return []
     if news["status"] != "ok":
-        return [f"ESPN news: unavailable ({news['error_type']}); no news context was added."]
+        return [*_history_lines(news.get("history")),
+                f"ESPN news: unavailable ({news['error_type']}); no news context was added."]
     rows = news["players"]
     trimmed = sum(r["trimmed"] for r in rows) + news["entries_dropped"]
     return [f"ESPN news: requested {news['requested']} players ({news['not_requested']} over the request limit); "
@@ -160,7 +182,7 @@ def _news_lines(news):
             f"24 hours ({trimmed} over limits, {sum(r['older_injury_blurbs'] for r in rows)} older, "
             f"{sum(r['future_injury_blurbs'] for r in rows)} newer than the snapshot and not used; "
             f"{sum(r['name_missing'] for r in rows)} players without a name could not be checked).",
-            *news["limitations"]]
+            *_history_lines(news.get("history")), *news["limitations"]]
 
 
 def explanation(result):

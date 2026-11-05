@@ -69,8 +69,8 @@ if args.streaming_plan:
                          "context_document": context_document, "claude": args.claude_review,
                          "model": args.claude_model}
     if args.streaming_news:
-        from features.player_news import fetch_player_news
-        streaming_options["news_fetcher"] = fetch_player_news
+        from features.player_news import HISTORY_PATH, fetch_player_news
+        streaming_options.update(news_fetcher=fetch_player_news, news_history=HISTORY_PATH)
 
 if args.output_dir:
     RESULTS_DIR = args.output_dir

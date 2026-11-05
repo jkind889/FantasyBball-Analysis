@@ -154,6 +154,14 @@ Entries may also carry `retrieved_at` (timezone-aware) and `source_item_id` (at 
   `observed_at` is ESPN's declared publish time; `retrieved_at` is when it was fetched.
 - **Budgets:** at most two blurbs per player, 240-character summaries and about 4 KB in
   total. Caller-supplied entries always win. Everything trimmed is counted.
+- **History:** each live news run adds to `data/news_history/blurbs.jsonl`, one JSON
+  object per line. It is git-ignored and exists only on this machine. It keeps every
+  blurb that passed the filtering above, whatever its age or topic and with its full
+  story, because ESPN's feed is capped and old items can't be fetched again. Rows are
+  never rewritten: `retrieved_at` is when that text was first seen, and an edited blurb
+  gets a new row. `retrieved_at` shows when we had a blurb, not that ESPN's `published`
+  time is right. Nothing reads this file yet, so it has no effect on plans or reviews.
+  A failed save is reported and never blocks planning.
 - **Review input bound:** a real six-day week measured about 14.5 KB without news and
   19.3 KB with four blurbs, because each player with fresh evidence adds game rows to
   every plan. The bound is 32 KB. When the payload is too large, the review withholds news
