@@ -26,6 +26,8 @@ MAX_NEWS_PLAYERS = 40
 MAX_REQUEST_SECONDS = 20
 MAX_TOTAL_SECONDS = 90
 MAX_SUMMARY_CHARS = 240
+# Judgment-call blurbs keep the story; 1,000 characters held 99% of saved blurbs whole.
+MAX_JUDGMENT_SUMMARY_CHARS = 1000
 MAX_ITEMS_PER_PLAYER = 2
 # A first limit only: the review's 16 KB bound must also hold plan rows that grow
 # with the horizon, so it withholds the lowest-priority news itself when needed.
@@ -38,13 +40,19 @@ HISTORY_FIELDS = ("player_id", "item_id", "published", "headline", "story")
 # with no capitalized name in between: stories and later clauses often describe
 # teammates ("Smith will start with Jones sidelined").
 _GAP_WORD = r"(?:[a-z][\w'-]*,?|[A-Z]{2,}|(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day(?:'s)?)"
+_NEAR_NAME = rf"^,?(?:\s+{_GAP_WORD}){{0,6}}?\s+[\"']?"
 ABSENCE_PHRASE = re.compile(
-    rf"^,?(?:\s+{_GAP_WORD}){{0,6}}?\s+[\"']?(?i:ruled out|will miss|won't play|won't suit up|will not play|did not play|"
-    r"didn't play|not playing|won't be available|be rested|sit out|sat out|sitting out|game-time decision|expected to miss|missed|sidelined|out for|out indefinitely|"
+    rf"{_NEAR_NAME}(?i:ruled out|will miss|won't play|won't suit up|will not play|did not play|"
+    r"didn't play|not playing|won't be available|be rested|sit out|sat out|sitting out|game-time decision|expected to miss|"
+    r"set to miss|missed|sidelined|out\s+for|out\s+indefinitely|unable to return|minutes restriction|"
     r"doubtful|questionable|probable|isn't expected|not expected|dealing with|underwent|undergo|undergoes|"
     r"undergoing|surgery|MRI|diagnosed|exited|locker room|left\s+(?:the\s+|[\w-]+'s\s+)(?:[\w'-]+\s+)?(?:game|contest|win|loss|practice)|"
     r"won't return|will not return|did not return|didn't return|stretchered|injured|suffer|suffered|sustained|"
     r"day-to-day|re-evaluated|torn|tore|tear of|tear in (?:his|the)|sprain|sprained|strain|strained|fracture|fractured)\b")
+# Wording that may or may not mean an injury ("limited" minutes, a practice skipped for
+# rest). These blurbs still qualify, but carry more of the story so the reader can judge.
+JUDGMENT_PHRASE = re.compile(
+    rf"{_NEAR_NAME}(?i:did not practice|didn't practice|did not participate|didn't participate|(?:very )?limited|will rest)\b")
 
 
 def _plain(text):
@@ -62,20 +70,29 @@ def _subject(player_name):
     return tokens[-1] if tokens else None
 
 
-def is_injury_headline(headline, player_name):
-    """True when an injury/absence marker sits on this player's name in the headline.
+def injury_match(headline, player_name):
+    """How an injury/absence marker sits on this player's name in the headline.
 
+    Returns "clear", "judgment" (wording that needs the story to interpret) or None.
     A heuristic for routing blurbs, never a medical or availability judgment.
     """
     subject = _subject(player_name)
     if not subject:
-        return False
+        return None
     text = _plain(headline if isinstance(headline, str) else "")
+    found = None
     for match in re.finditer(rf"(?<![\w'-]){re.escape(subject)}(?:'s|')?(?![\w-])", text, re.I):
         rest = text[match.end():]
         if re.match(r"\s*\([^)]{2,40}\)", rest) or ABSENCE_PHRASE.match(rest):
-            return True
-    return False
+            return "clear"
+        if JUDGMENT_PHRASE.match(rest):
+            found = "judgment"
+    return found
+
+
+def is_injury_headline(headline, player_name):
+    """True when any injury/absence marker, clear or judgment, sits on this player's name."""
+    return injury_match(headline, player_name) is not None
 
 
 def filter_news_items(feed, player_id, player_name):
@@ -103,17 +120,19 @@ def filter_news_items(feed, player_id, player_name):
                 continue
             seen.add(str(item["id"]))
             story = item.get("story") if isinstance(item.get("story"), str) else ""
+            match = injury_match(headline, player_name)
             kept.append({"item_id": str(item["id"]), "player_id": player_id, "published": published,
                          "published_at": published_at, "headline": headline, "story": story,
-                         "is_injury": is_injury_headline(headline, player_name)})
+                         "is_injury": match is not None, "needs_story": match == "judgment"})
     return kept, counts
 
 
 def _summary(item):
+    limit = MAX_JUDGMENT_SUMMARY_CHARS if item.get("needs_story") else MAX_SUMMARY_CHARS
     text = " ".join(f"{item['headline']} {item['story']}".split())
-    if len(text) <= MAX_SUMMARY_CHARS:
+    if len(text) <= limit:
         return text
-    return text[:MAX_SUMMARY_CHARS - 3].rsplit(" ", 1)[0] + "..."
+    return text[:limit - 3].rsplit(" ", 1)[0] + "..."
 
 
 def select_news_entries(results, players, *, as_of, max_age=pd.Timedelta(hours=24),

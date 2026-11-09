@@ -10,8 +10,8 @@ import requests
 
 from features.streaming_context import normalize_context
 from features.player_news import (
-    MAX_ITEMS_PER_PLAYER, MAX_RESPONSE_BYTES, MAX_SUMMARY_CHARS, NEWS_ENDPOINT,
-    fetch_player_news, filter_news_items, is_injury_headline, save_news_history, select_news_entries,
+    MAX_ITEMS_PER_PLAYER, MAX_JUDGMENT_SUMMARY_CHARS, MAX_RESPONSE_BYTES, MAX_SUMMARY_CHARS, NEWS_ENDPOINT,
+    fetch_player_news, filter_news_items, injury_match, is_injury_headline, save_news_history, select_news_entries,
 )
 
 AS_OF = "2026-11-03T18:00:00+00:00"
@@ -55,6 +55,10 @@ class HeadlineTests(unittest.TestCase):
             ("O\u2019Neale (back) is out.", "Royce O'Neale", True),
             ("Jones' knee surgery went well.", "Tre Jones", True),
             ("Young guards step up as Young (ankle) sits.", "Trae Young", True),
+            ("Nurkic is out  for Friday's game against Memphis.", "Jusuf Nurkic", True),
+            ("Smith is set to miss several weeks.", "Jalen Smith", True),
+            ("Smith was unable to return to Sunday's win.", "Jalen Smith", True),
+            ("Smith will play on a minutes restriction Thursday.", "Jalen Smith", True),
             # A teammate's injury or a box score is not this player's injury.
             ("Smith will start Friday with Jones sidelined.", "Jalen Smith", False),
             ("Smith expected to start with Jones ruled out.", "Jalen Smith", False),
@@ -71,6 +75,29 @@ class HeadlineTests(unittest.TestCase):
         for headline, name, expected in cases:
             with self.subTest(headline=headline, name=name):
                 self.assertEqual(is_injury_headline(headline, name), expected)
+
+    def test_ambiguous_wording_is_a_judgment_match(self):
+        cases = [
+            ("Smith did not practice Friday.", "judgment"),
+            ("Smith tweaked his hamstring and didn't practice Friday.", "judgment"),
+            ("Smith did not participate in Latvia's qualifying window.", "judgment"),
+            ("Smith didn't participate in Monday's practice.", "judgment"),
+            ("Smith will be limited to begin training camp.", "judgment"),
+            ('Coach called Smith "very limited" for Wednesday.', "judgment"),
+            ("Smith will rest Sunday against the Kings.", "judgment"),
+            # A clear marker anywhere on the name wins over a judgment phrase.
+            ("Smith (knee) did not practice Friday.", "clear"),
+            ("Smith will rest, then Smith is questionable.", "clear"),
+            # Judgment wording still has to sit on this player's name.
+            ("Smith will start with Jones limited.", None),
+            ("Smith signed for the rest of the season.", None),
+            ("Smith is expected to start Friday.", None),
+        ]
+        for headline, expected in cases:
+            with self.subTest(headline=headline):
+                self.assertEqual(injury_match(headline, "Jalen Smith"), expected)
+                self.assertEqual(is_injury_headline(headline, "Jalen Smith"), expected is not None)
+        self.assertIsNone(injury_match("Jones will start with Smith limited.", "Tre Jones"))
 
 
 class FilterTests(unittest.TestCase):
@@ -166,6 +193,27 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(entry["retrieved_at"], "2026-11-03T18:00:05+00:00")
         self.assertLessEqual(len(entry["summary"]), MAX_SUMMARY_CHARS)
         self.assertEqual((entry["id"], entry["kind"], entry["player_id"]), ("espn-1-1", "injury", 1))
+
+    def test_judgment_blurbs_carry_more_story_and_pass_the_validator(self):
+        long_story = "word " * 400
+        judgment = blurb(1, headline="Smith did not practice Friday.", story=long_story)
+        short = blurb(2, headline="Smith will rest Sunday.", story="Coach's decision.", published="2026-11-03T11:00:00Z")
+        entries, _ = self.select({1: fetched(judgment, short)})
+        self.assertTrue(MAX_JUDGMENT_SUMMARY_CHARS - 10 < len(entries[0]["summary"]) <= MAX_JUDGMENT_SUMMARY_CHARS)
+        self.assertTrue(entries[0]["summary"].startswith("Smith did not practice Friday. word"))
+        self.assertTrue(entries[0]["summary"].endswith("..."))
+        self.assertEqual(entries[1]["summary"], "Smith will rest Sunday. Coach's decision.")
+        clear = self.select({1: fetched(blurb(1, story=long_story))})[0][0]
+        self.assertLessEqual(len(clear["summary"]), MAX_SUMMARY_CHARS)
+        snapshot = {"league_id": 1, "season_year": 2027, "week": 3, "as_of": AS_OF, "games": [],
+                    "players": [{"player_id": 1, "player_name": "Jalen Smith"}]}
+        context = normalize_context(snapshot, {"schema_version": 1, "league_id": 1, "season_year": 2027, "week": 3, "entries": entries})
+        self.assertEqual([e["status"] for e in context["entries"]], ["fresh", "fresh"])
+        base = dict(entries[0], summary="x" * 1000)
+        for bad in (dict(base, summary="x" * 1001), dict(base, source="x" * 501), dict(base, summary=" ")):
+            with self.subTest(bad={k: len(bad[k]) for k in ("source", "summary")}), self.assertRaises(ValueError):
+                normalize_context(snapshot, {"schema_version": 1, "league_id": 1, "season_year": 2027, "week": 3, "entries": [bad]})
+        normalize_context(snapshot, {"schema_version": 1, "league_id": 1, "season_year": 2027, "week": 3, "entries": [base]})
 
     def test_custom_window_supports_other_decision_times(self):
         results = {1: fetched(blurb(1, published="2026-10-01T00:00:00Z"))}

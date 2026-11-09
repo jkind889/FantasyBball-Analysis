@@ -93,9 +93,9 @@ def normalize_context(snapshot, document=None):
             raise ValueError("Context player ID is not in the snapshot")
         if entry["kind"] not in {"injury", "matchup"}:
             raise ValueError("Context kind must be injury or matchup")
-        if any(not isinstance(entry[k], str) or not entry[k].strip() or len(entry[k]) > 500
-               for k in ("source", "summary")):
-            raise ValueError("Context source and summary must be nonempty and at most 500 characters")
+        if (not isinstance(entry["source"], str) or not entry["source"].strip() or len(entry["source"]) > 500
+                or not isinstance(entry["summary"], str) or not entry["summary"].strip() or len(entry["summary"]) > 1000):
+            raise ValueError("Context source must be nonempty and at most 500 characters; summary at most 1,000")
         if "retrieved_at" in entry:
             timestamp(entry["retrieved_at"])
         if "source_item_id" in entry and (not isinstance(entry["source_item_id"], str)

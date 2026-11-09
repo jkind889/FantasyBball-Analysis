@@ -132,7 +132,7 @@ opponents absent from the remaining schedule are excluded from review. Matchup
 sample windows must end by the observation time. Small samples are descriptive,
 not established causal matchup advantages. Sources and content are supplied and not
 independently verified. Missing/stale evidence is exported explicitly.
-Files are limited to 64 KiB / 100 entries; summaries and sources to 500 characters.
+Files are limited to 64 KiB / 100 entries; sources to 500 characters and summaries to 1,000.
 Entries may also carry `retrieved_at` (timezone-aware) and `source_item_id` (at most
 64 characters) to keep a provider's own item ID and the retrieval time.
 
@@ -149,11 +149,16 @@ Entries may also carry `retrieved_at` (timezone-aware) and `source_item_id` (at 
 - **Injury routing:** a heuristic on the headline only. The marker must sit on the
   player's own name, such as `Smith (ankle)` or `Smith underwent`, because story text
   and later clauses often describe teammates. Blurbs can still be missed or misrouted.
+  Clear wording (`ruled out`, `set to miss`, `minutes restriction`) is routed as is.
+  Wording that may not mean an injury (`did not practice`, `didn't participate`,
+  `limited`, `will rest`) still qualifies, but keeps more of the story so the review
+  can judge it. A clear marker on the name wins over judgment wording.
 - **Time window:** published within the 24 hours before the decision snapshot, matching
   the context freshness rule. Newer items are excluded rather than used in hindsight.
   `observed_at` is ESPN's declared publish time; `retrieved_at` is when it was fetched.
-- **Budgets:** at most two blurbs per player, 240-character summaries and about 4 KB in
-  total. Caller-supplied entries always win. Everything trimmed is counted.
+- **Budgets:** at most two blurbs per player, 240-character summaries (1,000 for
+  judgment wording, which held 99% of saved blurbs whole) and about 4 KB in total.
+  Caller-supplied entries always win. Everything trimmed is counted.
 - **History:** each live news run adds to `data/news_history/blurbs.jsonl`, one JSON
   object per line. It is git-ignored and exists only on this machine. It keeps every
   blurb that passed the filtering above, whatever its age or topic and with its full
