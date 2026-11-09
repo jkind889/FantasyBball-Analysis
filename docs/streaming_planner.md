@@ -152,7 +152,13 @@ Entries may also carry `retrieved_at` (timezone-aware) and `source_item_id` (at 
   Clear wording (`ruled out`, `set to miss`, `minutes restriction`) is routed as is.
   Wording that may not mean an injury (`did not practice`, `didn't participate`,
   `limited`, `will rest`) still qualifies, but keeps more of the story so the review
-  can judge it. A clear marker on the name wins over judgment wording.
+  can judge it. A clear marker on the name wins over judgment wording, except
+  `available`: a returning player may not be at full strength, so availability always
+  keeps the story, even under an injury tag. Negated availability (`won't be
+  available`) is not a return. Tags that name no injury (`rest`, `coach's decision`,
+  `not injury related`, `recently traded`, `two-way`, `personal`, `trade pending`,
+  `recently signed`) don't count alone; wording after them still does, as in
+  `Smith (rest) has been ruled out`.
 - **Time window:** published within the 24 hours before the decision snapshot, matching
   the context freshness rule. Newer items are excluded rather than used in hindsight.
   `observed_at` is ESPN's declared publish time; `retrieved_at` is when it was fetched.

@@ -99,6 +99,43 @@ class HeadlineTests(unittest.TestCase):
                 self.assertEqual(is_injury_headline(headline, "Jalen Smith"), expected is not None)
         self.assertIsNone(injury_match("Jones will start with Smith limited.", "Tre Jones"))
 
+    def test_non_injury_tags_count_only_through_wording_after_them(self):
+        cases = [
+            ("Smith (rest) is part of the starting lineup for Wednesday.", None),
+            ("Smith (coach's decision) did not enter Friday's game.", None),
+            ("Smith (recently traded) will start Friday.", None),
+            ("Smith (two-way) recorded 12 points.", None),
+            ("Smith (rest) has been ruled out for Sunday's game.", "clear"),
+            ("Smith (not injury related) is out for Tuesday's game.", "clear"),
+            ("Smith (personal) will rest Friday.", "judgment"),
+            # A tag naming an injury still counts on its own, even beside a non-injury one.
+            ("Smith (personal, knee) is listed for Friday.", "clear"),
+            ("Smith (ankle/rest) will start Friday.", "clear"),
+            ("Smith (undisclosed) will start Friday.", "clear"),
+        ]
+        for headline, expected in cases:
+            with self.subTest(headline=headline):
+                self.assertEqual(injury_match(headline, "Jalen Smith"), expected)
+
+    def test_availability_always_carries_the_story(self):
+        cases = [
+            ("Smith (neck) is available for Sunday's game.", "judgment"),
+            ("Smith is available for Wednesday's game with a left finger sprain.", "judgment"),
+            ("Smith (knee) is available but will play on a minutes restriction.", "judgment"),
+            ("Smith (knee) is expected to be available Friday.", "judgment"),
+            ("Smith (rest) is available for Friday's game.", "judgment"),
+            ("Smith will be available to debut Tuesday.", "judgment"),
+            # Negated availability is an absence, not a return.
+            ("Smith won't be available Friday.", "clear"),
+            ("Smith (knee) is not expected to be available Friday.", "clear"),
+            ("Smith is unlikely to be available Friday.", None),
+            ("Smith remains unavailable.", None),
+            ("Smith will start with Jones available off the bench.", None),
+        ]
+        for headline, expected in cases:
+            with self.subTest(headline=headline):
+                self.assertEqual(injury_match(headline, "Jalen Smith"), expected)
+
 
 class FilterTests(unittest.TestCase):
     def test_keeps_only_this_players_blurbs_and_counts_every_drop(self):

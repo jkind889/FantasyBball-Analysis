@@ -53,6 +53,15 @@ ABSENCE_PHRASE = re.compile(
 # rest). These blurbs still qualify, but carry more of the story so the reader can judge.
 JUDGMENT_PHRASE = re.compile(
     rf"{_NEAR_NAME}(?i:did not practice|didn't practice|did not participate|didn't participate|(?:very )?limited|will rest)\b")
+# "Available" is a return from absence: the player may not be at full strength, so these
+# blurbs always carry the story, even under an injury tag. Negated wording ("won't be
+# available", "not expected to be available") is left to the absence phrases instead.
+AVAILABLE_PHRASE = re.compile(
+    rf"^,?(?:\s+(?!(?:not|never|unlikely|doubtful)\b|[\w-]*n't\b){_GAP_WORD}){{0,6}}?\s+[\"']?(?i:available)\b")
+# Parenthetical tags that name no injury. Alone they don't route a blurb, but wording
+# after them still does ("Smith (rest) has been ruled out").
+NON_INJURY_TAGS = {"rest", "coach's decision", "not injury related", "recently traded", "two-way",
+                   "personal", "trade pending", "recently signed"}
 
 
 def _plain(text):
@@ -74,20 +83,31 @@ def injury_match(headline, player_name):
     """How an injury/absence marker sits on this player's name in the headline.
 
     Returns "clear", "judgment" (wording that needs the story to interpret) or None.
+    Availability wins, then clear markers, then other judgment wording.
     A heuristic for routing blurbs, never a medical or availability judgment.
     """
     subject = _subject(player_name)
     if not subject:
         return None
     text = _plain(headline if isinstance(headline, str) else "")
-    found = None
+    found = set()
     for match in re.finditer(rf"(?<![\w'-]){re.escape(subject)}(?:'s|')?(?![\w-])", text, re.I):
         rest = text[match.end():]
-        if re.match(r"\s*\([^)]{2,40}\)", rest) or ABSENCE_PHRASE.match(rest):
-            return "clear"
-        if JUDGMENT_PHRASE.match(rest):
-            found = "judgment"
-    return found
+        tag = re.match(r"\s*\(([^)]{2,40})\)", rest)
+        if tag:
+            parts = {part.strip() for part in re.split(r"[,/]", tag.group(1).lower())}
+            if not parts <= NON_INJURY_TAGS:
+                found.add("clear")
+            rest = rest[tag.end():]
+        if AVAILABLE_PHRASE.match(rest):
+            found.add("available")
+        elif ABSENCE_PHRASE.match(rest):
+            found.add("clear")
+        elif JUDGMENT_PHRASE.match(rest):
+            found.add("judgment")
+    if "available" in found:
+        return "judgment"
+    return "clear" if "clear" in found else ("judgment" if found else None)
 
 
 def is_injury_headline(headline, player_name):
