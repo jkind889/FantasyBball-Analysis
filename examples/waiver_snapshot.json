@@ -1,0 +1,284 @@
+{
+  "schema_version": 1,
+  "league_id": 123,
+  "season_year": 2026,
+  "team_id": 1,
+  "week": 12,
+  "as_of": "2026-01-15T12:00:00-05:00",
+  "rules": {
+    "scoring_type": "H2H_POINTS",
+    "starting_slots": [
+      "PG"
+    ],
+    "roster_capacity": 1,
+    "timezone": "America/New_York",
+    "lineup_lock": "INDIVIDUAL_GAME",
+    "drop_lock": "INDIVIDUAL_GAME",
+    "acquisition_timing": "SAME_DAY",
+    "games_cap": null,
+    "lineup_move_limit": null,
+    "acquisitions_remaining": 2,
+    "position_limits": {},
+    "ir_legal": true
+  },
+  "schedule_complete": true,
+  "pool_complete": true,
+  "players": [
+    {
+      "player_id": 1,
+      "player_name": "Cold incumbent",
+      "position": "PG",
+      "pro_team": "ATL",
+      "eligible_slots": [
+        "PG",
+        "G",
+        "UT"
+      ],
+      "injury_status": "ACTIVE",
+      "lineup_slot": "PG",
+      "rostered": true,
+      "availability": "ONTEAM",
+      "available_at": "2026-01-15T12:00:00-05:00",
+      "undroppable": false,
+      "proj_pts_per_game": 30,
+      "season_avg_points": 30,
+      "vorp_ros": 600,
+      "recent_logs_complete": true
+    },
+    {
+      "player_id": 2,
+      "player_name": "Hot free agent",
+      "position": "PG",
+      "pro_team": "ATL",
+      "eligible_slots": [
+        "PG",
+        "G",
+        "UT"
+      ],
+      "injury_status": "ACTIVE",
+      "lineup_slot": null,
+      "rostered": false,
+      "availability": "FREEAGENT",
+      "available_at": "2026-01-15T12:00:00-05:00",
+      "undroppable": false,
+      "proj_pts_per_game": 25,
+      "season_avg_points": 24,
+      "vorp_ros": 500,
+      "recent_logs_complete": true
+    },
+    {
+      "player_id": 3,
+      "player_name": "Steady option",
+      "position": "PG",
+      "pro_team": "ATL",
+      "eligible_slots": [
+        "PG",
+        "G",
+        "UT"
+      ],
+      "injury_status": "ACTIVE",
+      "lineup_slot": null,
+      "rostered": false,
+      "availability": "FREEAGENT",
+      "available_at": "2026-01-15T12:00:00-05:00",
+      "undroppable": false,
+      "proj_pts_per_game": 28,
+      "season_avg_points": 28,
+      "vorp_ros": 560,
+      "recent_logs_complete": true
+    }
+  ],
+  "games": [
+    {
+      "game_id": "g15",
+      "pro_team": "ATL",
+      "opponent": "BOS",
+      "fantasy_week": 12,
+      "scoring_period": 15,
+      "tipoff": "2026-01-15T19:00:00-05:00",
+      "status": "SCHEDULED"
+    },
+    {
+      "game_id": "g16",
+      "pro_team": "ATL",
+      "opponent": "BOS",
+      "fantasy_week": 12,
+      "scoring_period": 16,
+      "tipoff": "2026-01-16T19:00:00-05:00",
+      "status": "SCHEDULED"
+    },
+    {
+      "game_id": "g18",
+      "pro_team": "ATL",
+      "opponent": "BOS",
+      "fantasy_week": 12,
+      "scoring_period": 18,
+      "tipoff": "2026-01-18T19:00:00-05:00",
+      "status": "SCHEDULED"
+    }
+  ],
+  "game_logs": [
+    {
+      "player_id": 1,
+      "game_id": "1-7",
+      "completed_at": "2026-01-07T23:00:00-05:00",
+      "points": 20,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 1,
+      "game_id": "1-8",
+      "completed_at": "2026-01-08T23:00:00-05:00",
+      "points": 20,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 1,
+      "game_id": "1-9",
+      "completed_at": "2026-01-09T23:00:00-05:00",
+      "points": 20,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 1,
+      "game_id": "1-10",
+      "completed_at": "2026-01-10T23:00:00-05:00",
+      "points": 20,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 1,
+      "game_id": "1-11",
+      "completed_at": "2026-01-11T23:00:00-05:00",
+      "points": 20,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 1,
+      "game_id": "1-12",
+      "completed_at": "2026-01-12T23:00:00-05:00",
+      "points": 20,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 2,
+      "game_id": "2-7",
+      "completed_at": "2026-01-07T23:00:00-05:00",
+      "points": 34,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 2,
+      "game_id": "2-8",
+      "completed_at": "2026-01-08T23:00:00-05:00",
+      "points": 34,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 2,
+      "game_id": "2-9",
+      "completed_at": "2026-01-09T23:00:00-05:00",
+      "points": 34,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 2,
+      "game_id": "2-10",
+      "completed_at": "2026-01-10T23:00:00-05:00",
+      "points": 34,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 2,
+      "game_id": "2-11",
+      "completed_at": "2026-01-11T23:00:00-05:00",
+      "points": 34,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 2,
+      "game_id": "2-12",
+      "completed_at": "2026-01-12T23:00:00-05:00",
+      "points": 34,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 3,
+      "game_id": "3-7",
+      "completed_at": "2026-01-07T23:00:00-05:00",
+      "points": 28,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 3,
+      "game_id": "3-8",
+      "completed_at": "2026-01-08T23:00:00-05:00",
+      "points": 28,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 3,
+      "game_id": "3-9",
+      "completed_at": "2026-01-09T23:00:00-05:00",
+      "points": 28,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 3,
+      "game_id": "3-10",
+      "completed_at": "2026-01-10T23:00:00-05:00",
+      "points": 28,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 3,
+      "game_id": "3-11",
+      "completed_at": "2026-01-11T23:00:00-05:00",
+      "points": 28,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    },
+    {
+      "player_id": 3,
+      "game_id": "3-12",
+      "completed_at": "2026-01-12T23:00:00-05:00",
+      "points": 28,
+      "minutes": 30,
+      "played": true,
+      "completed": true
+    }
+  ]
+}

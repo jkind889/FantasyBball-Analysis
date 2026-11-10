@@ -41,7 +41,10 @@ def build_digest(
     biggest_upsets_df=None,
 ):
     if week is None and not matchups_df.empty:
-        week = matchups_df["week"].max()
+        # Latest week that actually has a decided game, so the digest doesn't
+        # title itself after an unplayed future week.
+        decided = matchups_df[matchups_df["winner"] != "Tie"]
+        week = (decided if not decided.empty else matchups_df)["week"].max()
 
     lines = [f"Fantasy Basketball Weekly Digest — {season_year}, Week {week}", ""]
 

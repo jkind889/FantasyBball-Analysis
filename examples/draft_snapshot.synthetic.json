@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "snapshot_id": "synthetic-draft-example-v1",
+  "synthetic": true,
+  "league_id": "synthetic-league",
+  "season_year": 2026,
+  "cutoff_at": "2025-10-15T23:00:00Z",
+  "draft_started_at": "2025-10-15T23:30:00Z",
+  "teams": [
+    {
+      "team_id": "team-a",
+      "name": "team-a"
+    },
+    {
+      "team_id": "team-b",
+      "name": "team-b"
+    },
+    {
+      "team_id": "team-c",
+      "name": "team-c"
+    }
+  ],
+  "player_pool": {
+    "complete": true,
+    "source": "invented fixture pool; not real sports evidence",
+    "observed_at": "2025-10-15T22:00:00Z",
+    "players": [
+      {
+        "player_id": "p001",
+        "name": "Alden Vale",
+        "eligible_positions": [
+          "PG"
+        ]
+      },
+      {
+        "player_id": "p002",
+        "name": "Bryn North",
+        "eligible_positions": [
+          "PG"
+        ]
+      },
+      {
+        "player_id": "p003",
+        "name": "Corin Flint",
+        "eligible_positions": [
+          "SF"
+        ]
+      },
+      {
+        "player_id": "p004",
+        "name": "Dara Moss",
+        "eligible_positions": [
+          "PF"
+        ]
+      },
+      {
+        "player_id": "p005",
+        "name": "Ellis Reed",
+        "eligible_positions": [
+          "SG"
+        ]
+      },
+      {
+        "player_id": "p006",
+        "name": "Finley Ash",
+        "eligible_positions": [
+          "C"
+        ]
+      },
+      {
+        "player_id": "p007",
+        "name": "Gray Rowan",
+        "eligible_positions": [
+          "PF",
+          "C"
+        ]
+      },
+      {
+        "player_id": "p008",
+        "name": "Harper Cove",
+        "eligible_positions": [
+          "PG"
+        ]
+      },
+      {
+        "player_id": "p009",
+        "name": "Indigo Lake",
+        "eligible_positions": [
+          "PF"
+        ]
+      }
+    ]
+  },
+  "rules": {
+    "source": "invented example league rules",
+    "observed_at": "2025-10-15T22:00:00Z",
+    "scoring": {
+      "type": "H2H_POINTS",
+      "version": "synthetic-points-v1",
+      "weights": {
+        "PTS": 1
+      }
+    },
+    "roster": {
+      "starting_slots": [
+        "PG",
+        "SG",
+        "C",
+        "UT"
+      ],
+      "bench_slots": 2
+    }
+  },
+  "rankings": {
+    "metric": "projected_total_points",
+    "source": "invented fixture ranking",
+    "observed_at": "2025-10-15T22:00:00Z",
+    "season_year": 2026,
+    "league_id": "synthetic-league",
+    "horizon": "full_season",
+    "scoring_version": "synthetic-points-v1",
+    "entries": [
+      {
+        "player_id": "p001",
+        "value": 1000,
+        "source": "synthetic-provider",
+        "observed_at": "2025-10-15T22:00:00Z",
+        "season_year": 2026,
+        "horizon": "full_season"
+      },
+      {
+        "player_id": "p002",
+        "value": 990,
+        "source": "synthetic-provider",
+        "observed_at": "2025-10-15T22:00:00Z",
+        "season_year": 2026,
+        "horizon": "full_season"
+      },
+      {
+        "player_id": "p003",
+        "value": 980,
+        "source": "synthetic-provider",
+        "observed_at": "2025-10-15T22:00:00Z",
+        "season_year": 2026,
+        "horizon": "full_season"
+      },
+      {
+        "player_id": "p004",
+        "value": 970,
+        "source": "synthetic-provider",
+        "observed_at": "2025-10-15T22:00:00Z",
+        "season_year": 2026,
+        "horizon": "full_season"
+      },
+      {
+        "player_id": "p005",
+        "value": 960,
+        "source": "synthetic-provider",
+        "observed_at": "2025-10-15T22:00:00Z",
+        "season_year": 2026,
+        "horizon": "full_season"
+      },
+      {
+        "player_id": "p006",
+        "value": 950,
+        "source": "synthetic-provider",
+        "observed_at": "2025-10-15T22:00:00Z",
+        "season_year": 2026,
+        "horizon": "full_season"
+      },
+      {
+        "player_id": "p007",
+        "value": 950,
+        "source": "synthetic-provider",
+        "observed_at": "2025-10-15T22:00:00Z",
+        "season_year": 2026,
+        "horizon": "full_season"
+      },
+      {
+        "player_id": "p008",
+        "value": null,
+        "source": "synthetic-provider",
+        "observed_at": "2025-10-15T22:00:00Z",
+        "season_year": 2026,
+        "horizon": "full_season"
+      },
+      {
+        "player_id": "p009",
+        "value": 0,
+        "source": "synthetic-provider",
+        "observed_at": "2025-10-15T22:00:00Z",
+        "season_year": 2026,
+        "horizon": "full_season"
+      }
+    ]
+  },
+  "keepers": [],
+  "picks": {
+    "complete": true,
+    "events": [
+      {
+        "overall_pick": 1,
+        "team_id": "team-a",
+        "player_id": "p001"
+      },
+      {
+        "overall_pick": 2,
+        "team_id": "team-b",
+        "player_id": "p002"
+      },
+      {
+        "overall_pick": 3,
+        "team_id": "team-c",
+        "player_id": "p003"
+      },
+      {
+        "overall_pick": 4,
+        "team_id": "team-a",
+        "player_id": "p004"
+      },
+      {
+        "overall_pick": 5,
+        "team_id": "team-b",
+        "player_id": "p006"
+      }
+    ]
+  }
+}

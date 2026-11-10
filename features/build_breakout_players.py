@@ -26,9 +26,12 @@ def build_breakout_players(
     previous_player_cache=None,
     min_current_gp=41,
     min_previous_gp=20,
+    current_free_agents=None,
 ):
+    if current_free_agents is None:
+        current_free_agents = _fetch_free_agents(current_league)
     current_players = _dedupe_players(
-        _rostered_players(current_league) + _fetch_free_agents(current_league)
+        _rostered_players(current_league) + list(current_free_agents)
     )
     if previous_player_cache is None and conn is not None:
         previous_player_cache = BreakoutPlayerCache(

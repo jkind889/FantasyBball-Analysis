@@ -1,4 +1,5 @@
 import pandas as pd
+from features.provider_projections import player_projection
 
 def _player_id(row):
     return row.get("player_id")
@@ -79,8 +80,8 @@ def espn_player_to_row(player,season_year):
         "pos_rank": getattr(player, "posRank", None),
         "avg_points": getattr(player, "avg_points", None),
         "total_points": getattr(player, "total_points", None),
-        "projected_total_points": getattr(player, "projected_total_points", None),
-        "projected_avg_points": getattr(player, "projected_avg_points", None),
+        "season_year": season_year,
+        **player_projection(player, season_year),
         "games_played": total_stats.get("GP", 0),
     }
 
