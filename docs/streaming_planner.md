@@ -33,8 +33,11 @@ The adapter uses an already configured `ANTHROPIC_API_KEY`; a non-workspace-scop
 key may also require `ANTHROPIC_WORKSPACE_ID`. This feature does not configure
 credentials. Five live requests to `claude-opus-5-5` on one matchup's data all
 validated, each using about 10,700 input and 900 or fewer output tokens. All five chose
-the deterministic plan and cited no evidence, so an evidence-based or differing choice
-has not been exercised live. Other models are unverified.
+the deterministic plan and cited no evidence. On 2026-11-10, three more `claude-opus-5-5`
+reviews of other teams' live snapshots (replayed with their exported news) all validated
+and cited ESPN blurbs. Two chose a different plan: HOLD instead of dropping a star whose
+OUT status was a one-game rest, and a plan avoiding an add downgraded to out. Other
+models are unverified.
 
 Failed requests retain bounded `request_diagnostic` metadata in the fallback:
 a stable error code, HTTP status when received, and an allowlisted stop reason
