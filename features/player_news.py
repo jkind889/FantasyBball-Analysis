@@ -45,6 +45,8 @@ ABSENCE_PHRASE = re.compile(
     rf"{_NEAR_NAME}(?i:ruled out|will miss|won't play|won't suit up|will not play|did not play|"
     r"didn't play|not playing|won't be available|be rested|sit out|sat out|sitting out|game-time decision|expected to miss|"
     r"set to miss|missed|sidelined|out\s+for|out\s+indefinitely|unable to return|minutes restriction|"
+    r"not available|isn't available|inactive|(?:isn't|not) in line to play|won't travel|will not travel|"
+    r"did not appear|didn't appear|listed (?:as )?out|"
     r"doubtful|questionable|probable|isn't expected|not expected|dealing with|underwent|undergo|undergoes|"
     r"undergoing|surgery|MRI|diagnosed|exited|locker room|left\s+(?:the\s+|[\w-]+'s\s+)(?:[\w'-]+\s+)?(?:game|contest|win|loss|practice)|"
     r"won't return|will not return|did not return|didn't return|stretchered|injured|suffer|suffered|sustained|"
