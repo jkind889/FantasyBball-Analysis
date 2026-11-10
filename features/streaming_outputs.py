@@ -228,7 +228,8 @@ def explanation(result):
                      "remaining " + "; ".join(f"{key}={_allowance(value)}" for key, value in plan["budget_after"].items()) + ".")
         for pid in item["player_ids"]:
             p = players[pid]
-            lines.append(f"  {pid} {p['player_name']}: season VORP {p.get('vorp_ros')}; snapshot injury status {p.get('injury_status')}")
+            back = f" ({p['injury_type']}; ESPN expected return {p['injury_return_date']})" if p.get("injury_type") and p.get("injury_return_date") else ""
+            lines.append(f"  {pid} {p['player_name']}: season VORP {p.get('vorp_ros')}; snapshot injury status {p.get('injury_status')}{back}")
         for eid in item["evidence_ids"]:
             e = sources[eid]
             lines.append(f"  Supplied evidence {eid} ({e['observed_at']}, {e['source']}): {e['summary']}")

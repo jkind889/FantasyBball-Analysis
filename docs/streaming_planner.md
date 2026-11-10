@@ -84,9 +84,16 @@ billing did not occur; inspect service-side usage before approving a retry.
   then fewer acquisitions. There is no invented point value for saving an acquisition.
   Future free-agent availability assumes nobody else acquires the player; refresh
   before any real decision. No transactions are submitted.
-- Current injury availability is held constant in numerical forecasts. Context
-  helps compare plans but does not introduce a new injury or opponent forecasting
-  model. Protect core players explicitly; season VORP is comparison evidence,
+- Current injury availability is held constant in numerical forecasts, with one
+  exception: an OUT player whose ESPN `injuryDetails` type is `Rest` counts from
+  ESPN's expected return date, at his normal rate. Injured OUT players stay out all
+  week because for injuries ESPN's date is usually just the next game; using those
+  waits for sources beyond ESPN. A return date on or before today while the player
+  is still OUT is stale and ignored, as are out-for-season players, suspensions and
+  IR slots. Snapshots keep `injury_return_date`, `injury_type` and `out_for_season`;
+  older snapshots without them replay as before, and Claude sees the type and date.
+  Context helps compare plans but does not introduce a new injury or opponent
+  forecasting model. Protect core players explicitly; season VORP is comparison evidence,
   not an automatic protection rule.
 
 ## Dated context input

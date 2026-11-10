@@ -185,6 +185,44 @@ class AdvisorTests(unittest.TestCase):
         calendar = advise_waivers(self.s)["calendar"]
         self.assertEqual(set(calendar[calendar.game_id == "g15"]["date"]), {"2026-01-15"})
 
+    def test_rest_day_counts_from_espns_expected_return_only(self):
+        def reasons(**fields):
+            s = example_snapshot()
+            s["players"][0].update(injury_status="OUT", **fields)
+            calendar = advise_waivers(s)["calendar"]
+            rows = calendar[(calendar.player_id == 1) & (calendar.action_id == calendar.action_id.iloc[0])]
+            return dict(zip(rows.date, rows.reason))
+
+        rest = {"injury_type": "Rest", "injury_return_date": "2026-01-16", "out_for_season": False}
+        self.assertEqual(reasons(**rest), {
+            "2026-01-15": "unavailable (rest day; ESPN expects a return 2026-01-16)",
+            "2026-01-16": "recommended start", "2026-01-18": "recommended start"})
+        self.assertEqual(reasons(**dict(rest, injury_type=" rest "))["2026-01-16"], "recommended start")
+        self.assertEqual(reasons(**dict(rest, out_for_season=None))["2026-01-16"], "recommended start")
+        held = "unavailable (current injury/IR status held constant)"
+        for label, fields in (
+                ("injury, not rest", dict(rest, injury_type="Ankle")),
+                ("return date is today, so stale", dict(rest, injury_return_date="2026-01-15")),
+                ("return date already passed", dict(rest, injury_return_date="2026-01-10")),
+                ("out for season", dict(rest, out_for_season=True)),
+                ("no return date", dict(rest, injury_return_date=None)),
+                ("unparseable return date", dict(rest, injury_return_date="soon")),
+                ("empty return date", dict(rest, injury_return_date="")),
+                ("NaT return date", dict(rest, injury_return_date="NaT")),
+                ("numeric return date", dict(rest, injury_return_date=20260116)),
+                ("no type", {"injury_return_date": "2026-01-16"}),
+                ("older snapshot without the fields", {})):
+            with self.subTest(label):
+                self.assertEqual(set(reasons(**fields).values()), {held})
+        s = example_snapshot()
+        s["players"][0].update(injury_status="SUSPENSION", **rest)
+        calendar = advise_waivers(s)["calendar"]
+        self.assertEqual(set(calendar[calendar.player_id == 1].reason), {held})
+        s = example_snapshot()
+        s["players"][0].update(lineup_slot="IR", **rest)
+        calendar = advise_waivers(s)["calendar"]
+        self.assertEqual(set(calendar[calendar.player_id == 1].reason), {held})
+
     def test_missing_data_partial_never_definitive(self):
         self.s["players"][0]["recent_logs_complete"] = False
         board = advise_waivers(self.s)["recommendations"]

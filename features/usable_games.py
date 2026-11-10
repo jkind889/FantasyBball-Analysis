@@ -13,6 +13,27 @@ UNAVAILABLE = {"OUT", "SUSPENSION", "SUSPENDED", "INJURED_RESERVE"}
 IGNORED_GAMES = {"CANCELED", "CANCELLED", "POSTPONED"}
 
 
+def rest_return_date(player, today):
+    """ESPN's expected return date for an OUT player on a scheduled rest day, else None.
+
+    Only rest days qualify: for injuries ESPN's date is usually just the next game.
+    A date on or before today while the player is still OUT is stale, so it is ignored
+    and the player stays out for the whole horizon.
+    """
+    if (player.get("injury_status") != "OUT" or player.get("out_for_season") is True
+            or not isinstance(player.get("injury_type"), str) or player["injury_type"].strip().lower() != "rest"):
+        return None
+    back = player.get("injury_return_date")
+    try:
+        parsed = pd.Timestamp(back) if isinstance(back, str) else None
+    except ValueError:
+        return None
+    if parsed is None or pd.isna(parsed):
+        return None
+    back = parsed.date().isoformat()
+    return back if back > today else None
+
+
 def prepare_schedule(snapshot):
     now = timestamp(snapshot["as_of"])
     zone = snapshot["rules"]["timezone"]
@@ -140,8 +161,13 @@ def optimize_lineup(roster, context, rules, forms, add=None, drop=None,
                 issues.append(f"Unknown game status: {game['game_id']}")
                 continue
             if p.get("lineup_slot") == "IR" or p.get("injury_status") in UNAVAILABLE:
-                row["reason"] = "unavailable (current injury/IR status held constant)"
-                continue
+                back = None if p.get("lineup_slot") == "IR" else rest_return_date(p, today)
+                if back is None:
+                    row["reason"] = "unavailable (current injury/IR status held constant)"
+                    continue
+                if day < back:
+                    row["reason"] = f"unavailable (rest day; ESPN expects a return {back})"
+                    continue
             rate = number(form["streaming_ppg"])
             if rate is None or not p.get("eligible_slots"):
                 row["reason"] = "unknown projection or eligibility"

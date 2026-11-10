@@ -5,8 +5,8 @@ from unittest.mock import Mock, patch
 
 import pandas as pd
 
-from features.waiver_inputs import (fetch_snapshot, infer_matchup_periods, matchup_mapping, normalize_game_logs,
-                                    normalize_rules, period_dates)
+from features.waiver_inputs import (fetch_snapshot, infer_matchup_periods, injury_details, matchup_mapping,
+                                    normalize_game_logs, normalize_rules, period_dates)
 from features.nba_schedule import build_nba_schedule
 
 
@@ -260,6 +260,39 @@ class WaiverInputTests(unittest.TestCase):
         self.assertEqual(len(result["game_logs"]), 12)
         self.assertTrue(result["schedule_complete"])
         request.get_player_card.assert_called_once_with([1, 2], 20)
+        self.assertEqual({k: result["players"][0][k] for k in ("injury_return_date", "injury_type", "out_for_season")},
+                         {"injury_return_date": None, "injury_type": None, "out_for_season": None})
+
+    def test_snapshot_keeps_espns_injury_details_from_the_card(self):
+        raw = raw_league()
+        own = raw_player(1)
+        own["status"] = "ONTEAM"
+        raw["teams"][0]["roster"]["entries"] = [{"playerId": 1, "lineupSlotId": 0, "playerPoolEntry": own}]
+        card = copy.deepcopy(own)
+        card["player"].update(injuryStatus="OUT", injuryDetails={"expectedReturnDate": [2026, 1, 16],
+                                                                  "outForSeason": False, "type": "Rest"})
+        request = Mock()
+        request.get_league.return_value = raw
+        request.league_get.return_value = {"players": []}
+        request.get_player_card.return_value = {"players": [card]}
+        league = SimpleNamespace(espn_request=request, league_id=123, year=2026,
+                                 finalScoringPeriod=20, pro_schedule=pro_schedule(), recent_activity=Mock(return_value=[]))
+        player = fetch_snapshot(league, None, 1)["players"][0]
+        self.assertEqual((player["injury_status"], player["injury_type"], player["injury_return_date"], player["out_for_season"]),
+                         ("OUT", "Rest", "2026-01-16", False))
+
+    def test_injury_details_keep_only_well_formed_fields(self):
+        self.assertEqual(injury_details({"injuryDetails": {"expectedReturnDate": [2026, 11, 11], "outForSeason": False,
+                                                           "type": "Rest"}}),
+                         {"injury_return_date": "2026-11-11", "injury_type": "Rest", "out_for_season": False})
+        empty = {"injury_return_date": None, "injury_type": None, "out_for_season": None}
+        for raw in ({}, None, {"injuryDetails": None}, {"injuryDetails": "Rest"},
+                    {"injuryDetails": {"expectedReturnDate": [2026, 2, 30], "outForSeason": "no", "type": " "}},
+                    {"injuryDetails": {"expectedReturnDate": [2026, 11], "outForSeason": 0, "type": 5}},
+                    {"injuryDetails": {"expectedReturnDate": "2026-11-11", "outForSeason": None}},
+                    {"injuryDetails": {"expectedReturnDate": [2026, 11, True]}}):
+            with self.subTest(raw=raw):
+                self.assertEqual(injury_details(raw), empty)
 
     def test_closed_season_stops_before_available_pool(self):
         raw = raw_league()

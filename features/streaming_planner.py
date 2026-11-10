@@ -249,7 +249,7 @@ def plan_streaming(snapshot, *, max_moves=2, protected_ids=(), window=None):
         "Bounded beam search; not a globally optimal weekly plan",
         "At most one move per day; confirmed free agents only; no reacquisition of dropped players",
         "Future availability assumes no other manager claims the player; refresh before executing",
-        "Current injury status held constant; matchup/injury context does not alter numerical projections",
+        "Current injury status held constant, except OUT players on an ESPN-scheduled rest day, who count from ESPN's expected return date; matchup/injury context does not alter numerical projections",
         "Unspent acquisitions are shown explicitly; no modeled future opportunity value",
         "Rest-of-season values are tradeoff evidence, not an automatic core-player protection rule",
     ]

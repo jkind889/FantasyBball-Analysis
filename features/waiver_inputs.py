@@ -26,6 +26,28 @@ from features.recent_form import number, timestamp
 MIN_SCHEDULE_GAP_DAYS = 4
 
 
+def injury_details(raw_player):
+    """ESPN's injuryDetails as plain fields; anything malformed or absent stays None.
+
+    For injuries ESPN's expected return date is usually just the team's next game, so
+    callers use it only where it means something (a scheduled rest day).
+    """
+    details = raw_player.get("injuryDetails") if isinstance(raw_player, dict) else None
+    details = details if isinstance(details, dict) else {}
+    returned = details.get("expectedReturnDate")
+    return_date = None
+    if isinstance(returned, list) and len(returned) == 3 and all(type(v) is int for v in returned):
+        try:
+            return_date = date(*returned).isoformat()
+        except ValueError:
+            pass
+    kind = details.get("type")
+    out_for_season = details.get("outForSeason")
+    return {"injury_return_date": return_date,
+            "injury_type": kind if isinstance(kind, str) and kind.strip() else None,
+            "out_for_season": out_for_season if type(out_for_season) is bool else None}
+
+
 def normalize_rules(raw, team, config, daily_used=None):
     settings = raw["settings"]
     roster = settings.get("rosterSettings", {})
@@ -384,7 +406,8 @@ def fetch_snapshot(league, previous_league, team_id, week=None, config=None):
                   "season_avg_points": number(p.avg_points),
                   "proj_pts_per_game": number(projections.get(pid, {}).get("proj_pts_per_game")),
                   "vorp_ros": number(values.get(pid, {}).get("vorp_ros")),
-                  "recent_logs_complete": coverage.get(pid, False)}
+                  "recent_logs_complete": coverage.get(pid, False),
+                  **injury_details(card_map.get(pid, entry)["player"])}
         override = config.get("players", {}).get(str(pid), {})
         if set(override) - {"available_at", "availability", "undroppable", "protected"}:
             raise ValueError(f"Unsupported player override for {pid}")

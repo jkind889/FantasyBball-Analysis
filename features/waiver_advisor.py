@@ -54,7 +54,7 @@ def advise_waivers(snapshot, window=None, protected_ids=(), calendar_limit=20):
             "timezone": rules["timezone"], "selected_window": window}
     meta["analysis_mode"] = snapshot.get("mode", "live_snapshot")
     assumptions = list(snapshot.get("limitations", []))
-    assumptions.append("Current injury status held constant through target matchup; no injury probability model")
+    assumptions.append("Current injury status held constant through target matchup, except OUT players on an ESPN-scheduled rest day, who count from ESPN's expected return date; no injury probability model")
     baseline_coverage = {forms[p["player_id"]]["fallback_reason"] for p in roster
                          if p.get("lineup_slot") != "IR"}
     baseline_coverage.discard("")

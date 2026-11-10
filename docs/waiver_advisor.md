@@ -69,7 +69,9 @@ lineup points. It does not count completed games, add games that miss a waiver
 deadline, or credit a player who cannot displace a stronger legal starter.
 In-progress/locked assignments reserve their existing slots but have zero
 contribution to the *new decision* comparison. Current injury statuses are held
-constant as an explicit scenario assumption through the remaining matchup.
+constant as an explicit scenario assumption through the remaining matchup, except
+an OUT player on an ESPN-scheduled rest day (`injuryDetails` type `Rest`), who counts
+from ESPN's expected return date. Injury return dates are not used.
 
 ## Read the outputs
 

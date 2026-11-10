@@ -6,6 +6,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import pandas as pd
+
 from features.player_news import MAX_CONTEXT_BYTES
 from features.streaming_context import MAX_ENTRIES, load_context, merge_context_entries, normalize_context
 from features.streaming_outputs import explanation, news_priority, run_streaming
@@ -207,6 +209,27 @@ class StreamingNewsTests(unittest.TestCase):
         self.assertEqual(result["review"]["status"], "validated")
         self.assertIn("ESPN player news (RotoWire blurb)", explanation(result))
         self.assertIn("(ankle) is questionable", explanation(result))
+
+    def test_review_sees_and_reports_a_rest_day_return_date(self):
+        snapshot = sequence_snapshot()
+        back = (pd.Timestamp(snapshot["as_of"]) + pd.Timedelta(days=1)).date().isoformat()
+        snapshot["players"][0].update(injury_status="OUT", injury_type="Rest", injury_return_date=back, out_for_season=False)
+        sent = {}
+
+        def request(encoded, model, key, *, diagnostics=None):
+            sent["payload"] = json.loads(encoded)
+            plans = sorted(sent["payload"]["plans"], key=lambda p: -p["net_gain"])
+            return {"selected_plan_id": plans[0]["plan_id"],
+                    "comparisons": [{"plan_id": plans[0]["plan_id"], "reason": "higher_projected_gain",
+                                     "player_ids": [1], "evidence_ids": []}]}
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "fixture-key"}, clear=True), \
+                patch("features.streaming_review._request", side_effect=request):
+            result = run_streaming(snapshot, claude=True, model="fixture")
+        player = next(p for p in sent["payload"]["players"] if p["player_id"] == 1)
+        self.assertEqual((player["injury_status"], player["injury_type"], player["injury_return_date"]), ("OUT", "Rest", back))
+        self.assertIn("Rest counts from injury_return_date", SYSTEM)
+        self.assertEqual(result["review"]["status"], "validated")
+        self.assertIn(f"snapshot injury status OUT (Rest; ESPN expected return {back})", explanation(result))
 
     def test_review_withholds_lowest_priority_news_instead_of_being_skipped(self):
         long_story = "word " * 400
